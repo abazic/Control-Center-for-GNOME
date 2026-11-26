@@ -39,7 +39,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
 
         const integrationGroup = new Adw.PreferencesGroup({
             title: 'Quick Settings integration',
-            description: 'Control Center hosts the live GNOME Quick Settings grid, including compatible extension items.',
+            description: 'Control Center hosts the live GNOME Quick Settings grid and compatible extension items. Extensions with unrelated custom popups are not enumerable through this integration.',
         });
         const compatibilityRow = new Adw.ActionRow({
             title: 'Native Quick Settings replacement',
