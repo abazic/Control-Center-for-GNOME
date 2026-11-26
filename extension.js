@@ -561,6 +561,14 @@ export default class ControlCenterExtension extends Extension {
         this._editControlRow = editControlRow;
 
         const root = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true});
+        // Latar blur: saudara (bukan induk) tile, sebab Blur my Shell tidak
+        // memeriksa isi permukaan yang sudah menjadi target blur. Ditambahkan
+        // lebih dulu agar blur-nya berada di bawah blur tile.
+        root.add_child(new St.Widget({
+            style_class: 'cc-backdrop bms-popup-blur-target',
+            x_expand: true,
+            y_expand: true,
+        }));
         root.add_child(content);
         root.add_child(this._buildPopup());
         this._root = root;
