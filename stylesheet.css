@@ -522,17 +522,7 @@
     box-shadow: none !important;
 }
 
-/* Panel latar di bawah tile. */
+/* Jarak antara tile dan tepi panel latar blur. */
 .cc-content {
-    padding: 12px;
-}
-.cc-backdrop {
-    border-radius: 36px;
-    background-color: rgba(18, 30, 52, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-}
-/* Dengan Blur my Shell, warna di sini digambar di atas blur tile,
- * jadi dibuat transparan agar liquid glass tile tidak tertutup. */
-.cc-backdrop.bms-popup-blurred {
-    background-color: transparent;
+    padding: 18px;
 }
