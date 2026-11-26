@@ -7,7 +7,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 const CIRCLE = 60;
-const SPACING = 9;
+const SPACING = 10;
 const GRID_UNIT = (2 * CIRCLE) + SPACING;
 const PILL_INSET = 6;
 const SYMBOL_SCALE = 46 / 58;
