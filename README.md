@@ -33,6 +33,15 @@ The popup itself is a transparent layout container. Without Blur my Shell, each 
 
 Official reference: [Blur my Shell extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md).
 
+## Optional integrations
+
+The Mirror and Caffeine shortcuts hand off to the upstream GNOME extensions; they do not bundle or install them.
+
+- [Mirror](https://extensions.gnome.org/extension/9053/mirror/) (`mirror@distro.com`) — opens its native Android device menu. Mirror itself requires `adb`, `scrcpy`, `avahi-browse`, and `qrencode`.
+- [Caffeine](https://extensions.gnome.org/extension/517/caffeine/) (`caffeine@patapon.info`) — opens its native timer menu. The Control Center also reflects Caffeine's active state.
+
+Install and enable each upstream extension separately. If an extension is missing or disabled, its shortcut shows an explanatory notification.
+
 ## Compatibility
 
 The metadata allows GNOME Shell 45–51. The primary development target is **GNOME Shell 51.1 on CachyOS / Wayland**. Some integrations are version- or service-dependent: the Shell brightness D-Bus interface is available on GNOME 49 and later, while Wi-Fi, Bluetooth, Do Not Disturb, and audio depend on NetworkManager, BlueZ, the GNOME notification schema, and GVC respectively. This compatibility range is not a claim that every version has been runtime-tested.
