@@ -106,54 +106,49 @@ function makeSurface(styleClass, vertical = false) {
 
 function makeWifiTile(onClick = null, onMenuClick = null) {
     const tile = makeSurface('cc-wifi-tile');
-    tile.reactive = Boolean(onClick);
-    tile.can_focus = Boolean(onClick);
-    if (onClick) {
-        tile.connect('button-press-event', () => {
-            onClick();
-            return Clutter.EVENT_STOP;
-        });
-    }
     tile.set_size(MEDIUM_WIDTH, MEDIUM_HEIGHT);
-    tile.set_style(`width: ${MEDIUM_WIDTH}px; min-width: ${MEDIUM_WIDTH}px; max-width: ${MEDIUM_WIDTH}px; height: ${MEDIUM_HEIGHT}px; min-height: ${MEDIUM_HEIGHT}px; max-height: ${MEDIUM_HEIGHT}px; border-radius: ${MEDIUM_HEIGHT / 2}px; padding: 0 ${PILL_INSET}px;`);
-    const symbol = new St.Widget({
-        layout_manager: new Clutter.BinLayout(),
+
+    // Ikon: klik kiri on/off, klik kanan membuka daftar jaringan.
+    const symbol = new St.Button({
+        reactive: true,
+        can_focus: true,
+        track_hover: true,
+        button_mask: St.ButtonMask.ONE | St.ButtonMask.THREE,
         style_class: 'cc-symbol-disc',
+        accessible_name: 'Toggle Wi-Fi',
     });
     symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
     symbol.set_x_align(Clutter.ActorAlign.CENTER);
     symbol.set_y_align(Clutter.ActorAlign.CENTER);
-    symbol.set_style(`width: ${SYMBOL_SIZE}px; min-width: ${SYMBOL_SIZE}px; max-width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px; min-height: ${SYMBOL_SIZE}px; max-height: ${SYMBOL_SIZE}px;`);
     const symbolIcon = icon('network-wireless-signal-excellent-symbolic', SYMBOL_ICON_SIZE);
-    symbolIcon.set_x_align(Clutter.ActorAlign.CENTER);
-    symbolIcon.set_y_align(Clutter.ActorAlign.CENTER);
-    symbol.add_child(symbolIcon);
-    if (onMenuClick) {
-        const menuButton = new St.Button({
-            reactive: true,
-            can_focus: true,
-            track_hover: true,
-            style_class: 'cc-wifi-menu-button',
-            accessible_name: 'Choose Wi-Fi network',
-        });
-        menuButton.set_size(17, 17);
-        menuButton.set_child(icon('pan-down-symbolic', 10, 'cc-wifi-menu-icon'));
-        menuButton.set_x_align(Clutter.ActorAlign.END);
-        menuButton.set_y_align(Clutter.ActorAlign.END);
-        menuButton.connect('clicked', onMenuClick);
-        symbol.add_child(menuButton);
-        tile._ccMenuButton = menuButton;
-    }
-    const copy = new St.BoxLayout({
+    symbol.set_child(symbolIcon);
+    symbol.connect('clicked', (_button, mouseButton) => {
+        if (mouseButton === 3)
+            onMenuClick?.();
+        else
+            onClick?.();
+    });
+
+    // Teks: klik membuka daftar jaringan.
+    const text = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
-        y_align: Clutter.ActorAlign.CENTER,
         x_expand: true,
+        y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-copy',
     });
-    const title = label('Wi-Fi', 'cc-title');
     const status = label('Connected', 'cc-subtitle');
-    copy.add_child(title);
-    copy.add_child(status);
+    text.add_child(label('Wi-Fi', 'cc-title'));
+    text.add_child(status);
+    const copy = new St.Button({
+        reactive: true,
+        can_focus: true,
+        track_hover: true,
+        x_expand: true,
+        accessible_name: 'Choose Wi-Fi network',
+    });
+    copy.set_child(text);
+    copy.connect('clicked', () => onMenuClick?.());
+
     tile._ccIcon = symbolIcon;
     tile._ccStatusLabel = status;
     tile._ccSymbol = symbol;
@@ -683,47 +678,57 @@ export default class ControlCenterExtension extends Extension {
         this._nativeQuickSettings = null;
     }
 
-    _openWifiMenu() {
-        // Reuse GNOME Shell's own wireless menu so NetworkManager's agent
-        // handles secured networks and password prompts without extension-side
-        // password storage or custom authentication code.
-        const wirelessToggle = Main.panel.statusArea.quickSettings
-            ?._network?._wirelessToggle;
-
-        if (!wirelessToggle?.menu) {
-            Main.notifyError(
-                'Wi-Fi menu unavailable',
-                'GNOME Shell did not expose its wireless network menu.'
-            );
+    // Submenu Quick Settings berada di dalam popup Quick Settings, jadi popup
+    // induknya harus dibuka dulu (termasuk saat indikatornya disembunyikan).
+    _openQuickSettingsSubmenu(toggle, title) {
+        const quickSettings = Main.panel.statusArea.quickSettings;
+        if (!toggle?.menu || !toggle.visible || !quickSettings) {
+            Main.notifyError(`${title} unavailable`,
+                'The matching Quick Settings menu is not available.');
             return;
         }
 
         this._indicator.menu.close();
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            wirelessToggle.menu?.open();
+        this._clearSubmenuRequest();
+        this._submenuSource = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this._submenuSource = 0;
+            quickSettings.container.show();
+            quickSettings.menu.open();
+            toggle.menu.open();
+
+            // Sembunyikan lagi indikator setelah popup ditutup.
+            this._submenuMenu = quickSettings.menu;
+            this._submenuSignal = quickSettings.menu.connect(
+                'open-state-changed', (_menu, isOpen) => {
+                    if (isOpen)
+                        return;
+                    this._clearSubmenuRequest();
+                    this._syncNativeQuickSettingsVisibility();
+                });
             return GLib.SOURCE_REMOVE;
         });
     }
 
+    _clearSubmenuRequest() {
+        if (this._submenuSource)
+            GLib.Source.remove(this._submenuSource);
+        this._submenuSource = 0;
+        if (this._submenuSignal)
+            this._submenuMenu.disconnect(this._submenuSignal);
+        this._submenuSignal = 0;
+        this._submenuMenu = null;
+    }
+
+    _openWifiMenu() {
+        // Daftar jaringan dan dialog password tetap ditangani GNOME.
+        this._openQuickSettingsSubmenu(
+            Main.panel.statusArea.quickSettings?._network?._wirelessToggle, 'Wi-Fi menu');
+    }
+
     _openPowerModeMenu() {
-        // Power Profiles is exposed by GNOME Shell when the system service
-        // and hardware support switchable profiles.
-        const powerToggle = Main.panel.statusArea.quickSettings
-            ?._powerProfiles?.quickSettingsItems?.[0];
-
-        if (!powerToggle?.menu) {
-            Main.notifyError(
-                'Power Mode unavailable',
-                'Switchable power profiles are not available on this system.'
-            );
-            return;
-        }
-
-        this._indicator.menu.close();
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            powerToggle.menu?.open();
-            return GLib.SOURCE_REMOVE;
-        });
+        this._openQuickSettingsSubmenu(
+            Main.panel.statusArea.quickSettings?._powerProfiles?.quickSettingsItems?.[0],
+            'Power Mode');
     }
 
     _openPreferences() {
@@ -771,20 +776,7 @@ export default class ControlCenterExtension extends Extension {
         const caffeineToggle = extension?.stateObj?._caffeineIndicator
             ?.quickSettingsItems?.[0];
 
-        if (!caffeineToggle?.menu) {
-            Main.notifyError(
-                'Caffeine extension unavailable',
-                'Install and enable Caffeine (caffeine@patapon.info) to use its timer.'
-            );
-            return;
-        }
-
-        this._indicator.menu.close();
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            if (caffeineToggle.menu)
-                caffeineToggle.menu.open();
-            return GLib.SOURCE_REMOVE;
-        });
+        this._openQuickSettingsSubmenu(caffeineToggle, 'Caffeine');
     }
 
     _openMirrorMenu() {
@@ -792,20 +784,7 @@ export default class ControlCenterExtension extends Extension {
         const mirrorToggle = extension?.stateObj?._indicator
             ?.quickSettingsItems?.[0];
 
-        if (!mirrorToggle?.menu) {
-            Main.notifyError(
-                'Mirror extension unavailable',
-                'Install and enable Mirror (mirror@distro.com) to browse Android devices.'
-            );
-            return;
-        }
-
-        this._indicator.menu.close();
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            if (mirrorToggle.menu)
-                mirrorToggle.menu.open();
-            return GLib.SOURCE_REMOVE;
-        });
+        this._openQuickSettingsSubmenu(mirrorToggle, 'Mirror');
     }
 
     _syncMediaState() {
@@ -832,6 +811,7 @@ export default class ControlCenterExtension extends Extension {
 
     disable() {
         this._destroying = true;
+        this._clearSubmenuRequest();
         if (this._settings && this._hideQuickSettingsSignal)
             this._settings.disconnect(this._hideQuickSettingsSignal);
         this._hideQuickSettingsSignal = 0;
