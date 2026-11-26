@@ -39,17 +39,17 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
 
         const integrationGroup = new Adw.PreferencesGroup({
             title: 'System integration',
-            description: 'Control Center uses its own macOS-inspired interface and controls the same GNOME system services as native Quick Settings. State changes remain synchronized without duplicate native controls.',
+            description: 'Control Center uses its own macOS-inspired interface and controls the same GNOME system services as native Quick Settings.',
         });
-        const compatibilityRow = new Adw.ActionRow({
-            title: 'GNOME Quick Settings replacement',
-            subtitle: 'The native Quick Settings panel indicator is hidden while Control Center is enabled and restored when it is disabled. Native controls are not duplicated inside this interface.',
+        const hideQuickSettingsRow = new Adw.SwitchRow({
+            title: 'Hide Quick Settings bawaan',
+            subtitle: 'Sembunyikan indikator Quick Settings GNOME dari panel atas saat Control Center aktif.',
         });
-        compatibilityRow.add_prefix(new Gtk.Image({
-            icon_name: 'view-grid-symbolic',
-            pixel_size: 24,
-        }));
-        integrationGroup.add(compatibilityRow);
+        hideQuickSettingsRow.active = settings.get_boolean('hide-native-quick-settings');
+        hideQuickSettingsRow.connect('notify::active', () => {
+            settings.set_boolean('hide-native-quick-settings', hideQuickSettingsRow.active);
+        });
+        integrationGroup.add(hideQuickSettingsRow);
         page.add(integrationGroup);
 
         window.add(page);
