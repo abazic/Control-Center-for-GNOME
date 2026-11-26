@@ -352,7 +352,7 @@ export default class ControlCenterExtension extends Extension {
             style_class: 'cc-left-column',
             x_expand: false,
         });
-        this._wifiTile = makeWifiTile(() => this._controller.toggleWifi());
+        this._wifiTile = makeWifiTile(() => this._openWifiMenu());
         left.add_child(this._wifiTile);
 
         const connectivity = new St.BoxLayout({style_class: 'cc-circle-row'});
@@ -363,6 +363,11 @@ export default class ControlCenterExtension extends Extension {
             'airplane-mode-symbolic', 'Airplane Mode', () => this._controller.toggleAirplaneMode());
         connectivity.add_child(this._airplaneButton);
         left.add_child(connectivity);
+
+        this._powerModeButton = makeCircle(
+            'power-profile-balanced-symbolic', 'Power Mode', () => this._openPowerModeMenu());
+        left.add_child(this._powerModeButton);
+
         this._focusTile = makeFocusTile(() => this._controller.toggleFocus());
         left.add_child(this._focusTile);
 
@@ -622,6 +627,49 @@ export default class ControlCenterExtension extends Extension {
 
         this._nativeQuickSettings?.container?.show();
         this._nativeQuickSettings = null;
+    }
+
+    _openWifiMenu() {
+        // Reuse GNOME Shell's own wireless menu so NetworkManager's agent
+        // handles secured networks and password prompts without extension-side
+        // password storage or custom authentication code.
+        const wirelessToggle = Main.panel.statusArea.quickSettings
+            ?._network?._wirelessToggle;
+
+        if (!wirelessToggle?.menu) {
+            Main.notifyError(
+                'Wi-Fi menu unavailable',
+                'GNOME Shell did not expose its wireless network menu.'
+            );
+            return;
+        }
+
+        this._indicator.menu.close();
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            wirelessToggle.menu?.open();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _openPowerModeMenu() {
+        // Power Profiles is exposed by GNOME Shell when the system service
+        // and hardware support switchable profiles.
+        const powerToggle = Main.panel.statusArea.quickSettings
+            ?._powerProfiles?.quickSettingsItems?.[0];
+
+        if (!powerToggle?.menu) {
+            Main.notifyError(
+                'Power Mode unavailable',
+                'Switchable power profiles are not available on this system.'
+            );
+            return;
+        }
+
+        this._indicator.menu.close();
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            powerToggle.menu?.open();
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     _openPreferences() {
