@@ -1,6 +1,6 @@
 ## Preview
 
-![Control Center Preview](Screenshot From 2026-11-26 23-57-31.png)
+![Control Center Preview](<Screenshot From 2026-11-26 23-57-31.png>)
 
 # Control Center for GNOME
 
