@@ -728,22 +728,20 @@ export default class ControlCenterExtension extends Extension {
         quickSettings.can_focus = !locked;
         quickSettings.track_hover = !locked;
 
-        if (this._lockSignal) {
-            this._lockedMenu.disconnect(this._lockSignal);
-            this._lockSignal = 0;
+        const {menu} = quickSettings;
+        if (locked) {
+            menu.close();
+            // Keluarkan dari pengelola menu panel, agar tidak ikut terbuka saat
+            // kursor digeser dari menu lain.
+            Main.panel.menuManager.removeMenu(menu);
+            // Tahan juga pemanggilan langsung, misalnya Super+S.
+            menu.open = () => false;
+            this._lockedMenu = menu;
+        } else if (this._lockedMenu === menu) {
+            delete menu.open;
+            Main.panel.menuManager.addMenu(menu);
             this._lockedMenu = null;
         }
-        if (!locked)
-            return;
-
-        quickSettings.menu.close();
-        // Menahan juga pembukaan lewat pintasan keyboard (Super+S).
-        this._lockedMenu = quickSettings.menu;
-        this._lockSignal = this._lockedMenu.connect('open-state-changed',
-            (menu, isOpen) => {
-                if (isOpen)
-                    menu.close();
-            });
     }
 
     _restoreNativeQuickSettings() {
