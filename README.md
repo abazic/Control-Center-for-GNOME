@@ -2,18 +2,19 @@
 
 A macOS-inspired Control Center for GNOME Shell, designed around a compact, elegant panel and a Liquid Glass visual style.
 
-> **Project status:** Early planning / initial setup. The repository is currently being bootstrapped; the interface and features described below are goals, not implemented functionality.
+> **Project status:** Early planning / initial setup. The repository is being bootstrapped; the interface and features described below are goals, not implemented functionality.
 
 ## Vision
 
 Bring the convenience and visual language of macOS Control Center to the GNOME desktop while keeping the experience native to GNOME Shell.
 
-The extension aims to provide a single, quick-access panel for common system controls, with a translucent glass appearance inspired by the reference design.
+The extension aims to provide a single, quick-access panel for common system controls. Its visual identity is built from individually blurred, translucent control pills—not one large blurred panel.
 
 ### Design goals
 
-- **macOS-inspired layout** — compact tiles and grouped controls, following the supplied Control Center reference.
-- **Liquid Glass appearance** — translucent surfaces, background blur, subtle highlights, soft borders, and rounded corners.
+- **macOS-inspired layout** — compact pills and grouped controls, following the supplied Control Center reference.
+- **Per-pill Liquid Glass** — each control card/pill is its own blur target, with its own rounded corners and glass surface.
+- **Blur my Shell integration** — use Blur my Shell's documented styling hook and the user's configured popup blur pipeline.
 - **Native GNOME experience** — implemented as a GNOME Shell extension and integrated with the desktop rather than running as a separate application.
 - **Useful at a glance** — clear states, readable labels, and quick access to frequently used controls.
 - **Maintainable and adaptable** — keep UI components modular and account for GNOME Shell version differences.
@@ -33,30 +34,34 @@ The initial layout is intended to include:
 | Sound | Provide volume controls and audio access |
 | Settings shortcut | Open the relevant GNOME settings panel |
 
-The exact controls available may depend on GNOME Shell APIs, the system environment, and hardware support. Unsupported controls should be hidden or presented as unavailable rather than simulated.
+Each item or grouped control surface should be implemented as an individual pill/card wherever the design calls for a separate glass surface. The exact controls available may depend on GNOME Shell APIs, the system environment, and hardware support. Unsupported controls should be hidden or presented as unavailable rather than simulated.
 
 ## Visual direction: Liquid Glass
 
-The visual target is a glass-like panel that lets the desktop wallpaper and surrounding environment subtly show through.
+The target is a collection of glass-like pills arranged inside a Control Center popup. The blur should affect each pill individually, allowing the gaps between pills and the popup's surrounding area to remain visually distinct.
 
 Planned visual characteristics:
 
-- Background blur with adjustable strength where supported.
-- Semi-transparent light and dark surfaces.
-- Rounded cards and consistent spacing.
-- Subtle borders, highlights, and shadows to create depth.
+- **Independent blur per pill:** every glass pill/card is a separate blur target.
+- **Pill-shaped blur boundaries:** Blur my Shell follows each target surface's own `border-radius`.
+- Semi-transparent surfaces, subtle highlights, soft borders, and restrained shadows.
+- Consistent spacing between pills so the wallpaper can remain visible between them.
 - Smooth, restrained transitions for opening the panel and changing control states.
 - Accessible contrast and legible text in both light and dark environments.
 
+The outer Control Center popup is a layout container, not the single blur target for the entire interface. Avoid applying the blur class only to the popup root: doing so would blur the whole panel rather than produce the intended per-pill effect.
+
 ### Blur my Shell integration
 
-[Blur my Shell](https://github.com/aunetx/blur-my-shell) is the intended source of blur integration and visual inspiration.
+[Blur my Shell](https://github.com/aunetx/blur-my-shell) is the intended blur provider.
 
-Its extension integration guide documents the `bms-popup-blur-target` style class. Applying this class to the extension's surface allows Blur my Shell to handle the popup blur using the user's configured popup pipeline, including its Liquid Glass pipeline when selected. The integration is designed to be optional: the class has no effect when Blur my Shell is not installed.
+According to its [extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md), an extension can add the `bms-popup-blur-target` style class to a surface to make that surface follow Blur my Shell's Popups settings, including the selected blur pipeline and static/dynamic behavior.
 
-Implementation reference: [Integrating with Blur my Shell](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md).
+**Implementation requirement:** add `bms-popup-blur-target` to every individual pill/card surface that should receive the glass blur. Do not add it only to the outer Control Center popup container. Each pill's own `border-radius` defines the blur's rounded boundary. When these targets are inside a popup menu, Blur my Shell blurs the surfaces individually rather than blurring the entire menu; the parent menu itself has no background of its own while those targets are present.
 
-**Important:** Blur my Shell is a separate GNOME Shell extension. This project should integrate with its documented styling hooks rather than copy or bundle its implementation. The Control Center should remain usable without Blur my Shell; a suitable non-blurred translucent fallback style will be needed.
+Add the class when constructing each pill, or at the latest before the popup is first shown. Blur my Shell documents that a popup with no blur-target surface at that time is not searched again. It also adds `bms-popup-blurred` to surfaces it has blurred, which an extension can use to avoid duplicating its own blur treatment.
+
+This integration is optional: the documented class has no effect when Blur my Shell is not installed. The Control Center must remain usable without it, with a fallback style for the individual pills. This project should use Blur my Shell's documented styling hooks rather than copy or bundle its implementation.
 
 ## Development roadmap
 
@@ -68,14 +73,16 @@ The work is divided into small milestones so that the extension can be tested in
   - [ ] Add a minimal extension entry point and a repeatable local development workflow.
 
 - [ ] **2. Control Center shell**
-  - [ ] Create the panel entry point and popup container.
-  - [ ] Implement the macOS-inspired grid and card layout.
-  - [ ] Add responsive sizing, spacing, and rounded corners.
+  - [ ] Create the panel entry point and popup layout container.
+  - [ ] Implement the macOS-inspired grid and individual pill/card components.
+  - [ ] Add responsive sizing, spacing, and per-pill rounded corners.
 
-- [ ] **3. Liquid Glass styling**
-  - [ ] Add the Blur my Shell popup integration class.
-  - [ ] Verify the effect with Blur my Shell enabled and its Liquid Glass pipeline selected.
-  - [ ] Implement a graceful fallback when Blur my Shell is absent or disabled.
+- [ ] **3. Per-pill Liquid Glass styling**
+  - [ ] Add `bms-popup-blur-target` to each individual pill/card surface.
+  - [ ] Keep the outer popup container out of the blur-target role.
+  - [ ] Verify that each pill blurs independently and follows its own border radius.
+  - [ ] Verify the effect with Blur my Shell enabled and the desired popup pipeline selected.
+  - [ ] Implement a graceful per-pill fallback when Blur my Shell is absent or disabled.
   - [ ] Check contrast and readability over different wallpapers.
 
 - [ ] **4. System controls**
@@ -106,8 +113,8 @@ At this stage, the repository is at the project-planning stage. No working exten
 | Product direction and visual reference | Defined |
 | Initial feature scope | Planned |
 | Repository / extension scaffold | Not started |
-| Control Center UI | Not started |
-| Blur my Shell integration | Not started |
+| Control Center UI and pill components | Not started |
+| Per-pill Blur my Shell integration | Specified; not implemented |
 | System control functionality | Not started |
 | Testing and release | Not started |
 
@@ -123,8 +130,8 @@ The intended development workflow is:
 2. Install the development tools required by the selected GNOME Shell extension workflow.
 3. Build or install the extension into the local user's GNOME extensions directory.
 4. Enable the extension in GNOME Extensions.
-5. Test the panel and its controls in a development GNOME session.
-6. Test optional blur integration with Blur my Shell installed, then repeat without it to verify the fallback.
+5. Test the panel, individual pill surfaces, and their controls in a development GNOME session.
+6. Test per-pill blur with Blur my Shell installed and configured, then repeat without it to verify the fallback.
 
 Exact commands and dependencies will be documented after the initial project structure is in place.
 
@@ -137,7 +144,7 @@ When contributing implementation changes, please include the GNOME Shell version
 ## Credits and references
 
 - [Blur my Shell](https://github.com/aunetx/blur-my-shell) — blur effects and documented extension integration.
-- [Blur my Shell extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md) — popup blur integration and styling hooks.
+- [Blur my Shell extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md) — per-surface popup blur targets and styling hooks.
 - The macOS Control Center screenshot supplied as the project's visual reference.
 
 ## License
