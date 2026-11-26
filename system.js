@@ -219,7 +219,6 @@ export class SystemController {
     _refreshAirplane() {
         if (!this._state.airplaneAvailable)
             return;
-        const bluetoothOff = !this._state.bluetoothAvailable || !this._state.bluetoothEnabled;
         this._state.airplaneEnabled = Boolean(this._airplaneSnapshot);
     }
 
