@@ -1,0 +1,85 @@
+/* Popup is a layout shell; each .cc-pill is a separate blur target. */
+.cc-control-center-menu {
+    -arrow-rise: 8px;
+}
+
+.cc-menu-item {
+    padding: 0;
+    spacing: 0;
+    background-color: transparent;
+    border: 0;
+}
+
+.cc-content {
+    width: 340px;
+    padding: 10px;
+    spacing: 9px;
+}
+
+.cc-pill-row {
+    spacing: 9px;
+}
+
+.cc-pill {
+    min-height: 66px;
+    padding: 12px;
+    spacing: 8px;
+    border-radius: 20px;
+    background-color: rgba(245, 248, 252, 0.17);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    color: white;
+}
+
+.cc-pill.bms-popup-blurred {
+    /* Blur my Shell owns the blurred surface treatment. */
+    background-color: transparent;
+}
+
+.cc-pill-header {
+    spacing: 10px;
+}
+
+.cc-pill-icon {
+    color: white;
+}
+
+.cc-pill-labels {
+    spacing: 3px;
+}
+
+.cc-pill-title {
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cc-pill-subtitle {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10px;
+}
+
+.cc-media-pill {
+    min-height: 94px;
+    spacing: 12px;
+}
+
+.cc-media-controls {
+    spacing: 24px;
+}
+
+.cc-media-control-icon {
+    color: white;
+}
+
+.cc-wide-pill {
+    min-height: 54px;
+}
+
+.cc-footer {
+    padding-top: 2px;
+}
+
+.cc-footer-label {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 10px;
+}
