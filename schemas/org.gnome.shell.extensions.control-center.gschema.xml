@@ -6,6 +6,41 @@
       <summary>Quick Settings tile size</summary>
       <description>Size used for Control Center tiles.</description>
     </key>
+    <key name="wifi-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Wi-Fi tile size</summary>
+      <description>Display size for the Wi-Fi tile.</description>
+    </key>
+    <key name="bluetooth-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Bluetooth tile size</summary>
+      <description>Display size for the Bluetooth tile.</description>
+    </key>
+    <key name="airplane-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Airplane Mode tile size</summary>
+      <description>Display size for the Airplane Mode tile.</description>
+    </key>
+    <key name="focus-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Focus / Do Not Disturb tile size</summary>
+      <description>Display size for the Focus / Do Not Disturb tile.</description>
+    </key>
+    <key name="media-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Media Player tile size</summary>
+      <description>Display size for the Media Player tile.</description>
+    </key>
+    <key name="mirror-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Mirror tile size</summary>
+      <description>Display size for the Mirror tile.</description>
+    </key>
+    <key name="caffeine-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Caffeine tile size</summary>
+      <description>Display size for the Caffeine tile.</description>
+    </key>
     <key name="hide-native-quick-settings" type="b">
       <default>true</default>
       <summary>Hide native GNOME Quick Settings</summary>
