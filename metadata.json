@@ -3,9 +3,6 @@
   "name": "Control Center",
   "description": "A macOS-inspired GNOME Control Center with individually blurred Liquid Glass pills.",
   "shell-version": [
-    "46",
-    "47",
-    "48",
     "49"
   ],
   "url": "https://github.com/abazic/Control-Center-for-GNOME"
