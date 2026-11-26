@@ -182,4 +182,6 @@ Please test changes on a real GNOME session and make sure objects, signal handle
 
 ## License
 
-No license has been selected for this repository yet. A license should be chosen before distributing the extension publicly. If code or assets from other projects are included, retain their required attribution and verify license compatibility.
+This project is licensed under the **GNU General Public License v3.0 or later** (`GPL-3.0-or-later`). You may use, study, modify, and redistribute the software under the terms of that license. See the [LICENSE](LICENSE) file for the complete license text.
+
+The license applies to the project's original code. Third-party components, assets, and code remain subject to their respective licenses and attribution requirements.
