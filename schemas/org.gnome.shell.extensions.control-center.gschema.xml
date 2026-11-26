@@ -27,7 +27,7 @@
       <description>Display size for the Focus / Do Not Disturb tile.</description>
     </key>
     <key name="media-tile-size" type="s">
-      <default>'small'</default>
+      <default>'large'</default>
       <summary>Media Player tile size</summary>
       <description>Display size for the Media Player tile.</description>
     </key>
