@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.control-center" path="/org/gnome/shell/extensions/control-center/">
+    <key name="quick-settings-size" type="s">
+      <default>'small'</default>
+      <summary>Quick Settings tile size</summary>
+      <description>Size used for native Quick Settings tiles hosted in Control Center.</description>
+    </key>
+  </schema>
+</schemalist>
