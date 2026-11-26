@@ -686,6 +686,15 @@ export default class ControlCenterExtension extends Extension {
         for (const option of ['small', 'medium', 'large'])
             actor.remove_style_class_name(`cc-tile-size-${option}`);
         actor.add_style_class_name(`cc-tile-size-${size}`);
+
+        // A tile's preferred size changes its parent's natural allocation.
+        // Queue layout from the tile up to the menu content so sibling tiles
+        // are re-positioned instead of retaining their previous allocation.
+        let layoutActor = actor;
+        while (layoutActor) {
+            layoutActor.queue_relayout();
+            layoutActor = layoutActor.get_parent();
+        }
     }
 
     _applyAllTileSizes() {
