@@ -33,6 +33,15 @@ function icon(name, size = 22, styleClass = 'cc-icon') {
     return new St.Icon({icon_name: name, icon_size: size, style_class: styleClass});
 }
 
+function setControlActive(actor, active) {
+    if (!actor)
+        return;
+    if (active)
+        actor.add_style_class_name('cc-control-active');
+    else
+        actor.remove_style_class_name('cc-control-active');
+}
+
 function makeSurface(styleClass, vertical = false) {
     return new St.BoxLayout({
         orientation: vertical ? Clutter.Orientation.VERTICAL : Clutter.Orientation.HORIZONTAL,
@@ -443,6 +452,7 @@ export default class ControlCenterExtension extends Extension {
             this._wifiTile._ccIcon.icon_name = state.wifiEnabled
                 ? 'network-wireless-signal-excellent-symbolic'
                 : 'network-wireless-offline-symbolic';
+            setControlActive(this._wifiTile, state.wifiEnabled);
         }
 
         if (this._bluetoothButton) {
@@ -452,6 +462,8 @@ export default class ControlCenterExtension extends Extension {
             this._bluetoothButton.accessible_name = state.bluetoothAvailable
                 ? (state.bluetoothEnabled ? 'Bluetooth On' : 'Bluetooth Off')
                 : 'Bluetooth unavailable';
+            setControlActive(this._bluetoothButton,
+                state.bluetoothAvailable && state.bluetoothEnabled);
         }
 
         if (this._airplaneButton) {
@@ -461,6 +473,7 @@ export default class ControlCenterExtension extends Extension {
             this._airplaneButton.accessible_name = state.airplaneEnabled
                 ? 'Airplane Mode On' : 'Airplane Mode Off';
             this._airplaneButton.reactive = state.airplaneAvailable;
+            setControlActive(this._airplaneButton, state.airplaneEnabled);
         }
 
         if (this._focusTile) {
@@ -468,6 +481,7 @@ export default class ControlCenterExtension extends Extension {
                 ? 'On' : 'Do Not Disturb';
             this._focusTile._ccIcon.icon_name = state.focusEnabled
                 ? 'weather-clear-night-symbolic' : 'notifications-symbolic';
+            setControlActive(this._focusTile, state.focusEnabled);
         }
 
         if (this._brightnessTile && state.brightnessAvailable)
@@ -593,7 +607,8 @@ export default class ControlCenterExtension extends Extension {
         const active = this._caffeineSettings.get_boolean(CAFFEINE_TOGGLE_KEY);
         const glyph = this._caffeineButton.get_child();
         glyph.icon_name = active ? 'alarm-clock-symbolic' : 'timer-symbolic';
-        this._caffeineButton.opacity = active ? 255 : 190;
+        this._caffeineButton.opacity = 255;
+        setControlActive(this._caffeineButton, active);
         this._caffeineButton.accessible_name = active
             ? 'Caffeine enabled. Click to disable'
             : 'Caffeine disabled. Click to enable';
