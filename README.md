@@ -33,7 +33,7 @@ The metadata currently allows installation on GNOME Shell 45–50. This is an in
 git clone https://github.com/abazic/Control-Center-for-GNOME.git
 cd Control-Center-for-GNOME
 
-gnome-extensions pack --force --out-dir=dist .
+gnome-extensions pack --force --extra-source=control-center-symbolic.svg --out-dir=dist .
 gnome-extensions install --force dist/control-center@abazic.github.io.shell-extension.zip
 gnome-extensions enable control-center@abazic.github.io
 ```
@@ -92,6 +92,7 @@ gnome-shell --version
 ├── extension.js
 ├── metadata.json
 ├── stylesheet.css
+├── control-center-symbolic.svg
 ├── README.md
 └── .gitignore
 ```
