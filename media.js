@@ -55,7 +55,7 @@ export class MediaController {
             (_connection, _sender, _path, _iface, _signal, parameters) => {
                 const [name, oldOwner, newOwner] = parameters.deep_unpack();
                 if (name.startsWith('org.mpris.MediaPlayer2.'))
-                    this._handleName(name, Boolean(oldOwner), Boolean(newOwner));
+                    this._handleName(name, Boolean(newOwner));
             }
         );
         this._discover();
@@ -84,10 +84,10 @@ export class MediaController {
         }
     }
 
-    _handleName(name, appeared, vanished) {
-        if (appeared)
+    _handleName(name, hasOwner) {
+        if (hasOwner)
             this._players.set(name, true);
-        if (vanished)
+        else
             this._players.delete(name);
         this._selectPlayer();
     }
