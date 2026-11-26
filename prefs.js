@@ -45,8 +45,8 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             description: 'Control Center uses its own macOS-inspired interface and controls the same GNOME system services as native Quick Settings.',
         });
         const hideQuickSettingsRow = new Adw.SwitchRow({
-            title: 'Hide Quick Settings bawaan',
-            subtitle: 'Sembunyikan indikator Quick Settings GNOME dari panel atas saat Control Center aktif.',
+            title: 'Kunci Quick Settings bawaan',
+            subtitle: 'Ikon tetap tampil di panel atas, tetapi menunya tidak bisa dibuka.',
         });
         hideQuickSettingsRow.active = settings.get_boolean('hide-native-quick-settings');
         hideQuickSettingsRow.connect('notify::active', () => {
