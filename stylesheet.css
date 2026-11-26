@@ -506,3 +506,25 @@
     -barlevel-active-background-color: #ffffff;
     -slider-handle-radius: 7px;
 }
+
+/* Popup daftar menu di atas tile. */
+.cc-overlay {
+    background-color: rgba(0, 0, 0, 0.30);
+    border-radius: 29px;
+}
+.cc-popup {
+    width: 238px;
+    padding: 14px;
+    spacing: 8px;
+    border-radius: 29px;
+    color: #ffffff;
+    background-color: rgba(28, 40, 62, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.cc-popup-header { spacing: 8px; padding: 0 6px; }
+.cc-popup-title { font-size: 13px; font-weight: 700; }
+.cc-popup-scroll { max-height: 280px; }
+.cc-popup-item { padding: 8px 10px; border-radius: 10px; }
+.cc-popup-item:hover,
+.cc-popup-item:focus { background-color: rgba(255, 255, 255, 0.15); }
+.cc-popup-label { font-size: 12px; }
