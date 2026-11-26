@@ -19,6 +19,8 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Audio output switching through GVC; click the speaker shortcut to cycle through available output sinks.
 - Mirror shortcut opens the device list from the optional `Mirror` GNOME extension (`mirror@distro.com`).
 - Timer shortcut opens the optional `Caffeine` GNOME extension's timer menu (`caffeine@patapon.info`); its active state is reflected in the Control Center.
+- The live GNOME Quick Settings grid is hosted inside Control Center. Items registered by GNOME and extensions through `addExternalIndicator()` remain functional; the original panel Quick Settings entry is hidden while Control Center is enabled and restored on disable.
+- Quick Settings tile size is configurable in Preferences (Small by default, Medium, Large).
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
 - GNOME Shell ES module extension structure.
@@ -90,6 +92,7 @@ gnome-shell --version
 - [x] Assign a separate Blur my Shell target to every pill.
 - [x] Add transparent popup shell and translucent pill fallback.
 - [ ] Verify install, enable, and popup rendering on real GNOME sessions.
+- [ ] Runtime-test native Quick Settings grid reparenting and tile sizing on GNOME 51.
 - [ ] Tune layout against the supplied macOS Control Center reference.
 - [ ] Add hover, pressed, active, and disabled visual states.
 - [ ] Add responsive sizing and light/dark appearance handling.
@@ -114,6 +117,8 @@ gnome-shell --version
 .
 ├── extension.js
 ├── prefs.js
+├── schemas/
+│   └── org.gnome.shell.extensions.control-center.gschema.xml
 ├── system.js
 ├── media.js
 ├── metadata.json
