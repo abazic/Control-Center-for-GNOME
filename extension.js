@@ -627,7 +627,8 @@ export default class ControlCenterExtension extends Extension {
         const width = size === 'small' ? SMALL : MEDIUM_WIDTH;
         const height = size === 'large' ? LARGE_HEIGHT : SMALL;
         actor.set_size(width, height);
-        actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${height / 2}px;`);
+        const radius = size === 'large' ? 29 : height / 2;
+        actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${radius}px;`);
         for (const option of ['small', 'medium', 'large'])
             actor.remove_style_class_name(`cc-tile-size-${option}`);
         actor.add_style_class_name(`cc-tile-size-${size}`);
