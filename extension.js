@@ -27,13 +27,13 @@ function makeLabel(text, styleClass) {
 /* Every pill is an independent Blur my Shell surface. */
 function makePill({icon, title, subtitle, extraClass = ''}) {
     const pill = new St.BoxLayout({
-        vertical: true,
+        orientation: Clutter.Orientation.VERTICAL,
         x_expand: true,
         style_class: `${PILL_CLASS} ${extraClass}`.trim(),
     });
 
     const row = new St.BoxLayout({
-        vertical: false,
+        orientation: Clutter.Orientation.HORIZONTAL,
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-pill-header',
@@ -41,7 +41,7 @@ function makePill({icon, title, subtitle, extraClass = ''}) {
     row.add_child(makeIcon(icon));
 
     const labels = new St.BoxLayout({
-        vertical: true,
+        orientation: Clutter.Orientation.VERTICAL,
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-pill-labels',
@@ -57,13 +57,13 @@ function makePill({icon, title, subtitle, extraClass = ''}) {
 
 function makeMediaPill() {
     const pill = new St.BoxLayout({
-        vertical: true,
+        orientation: Clutter.Orientation.VERTICAL,
         x_expand: true,
         style_class: `${PILL_CLASS} cc-media-pill`,
     });
 
     const header = new St.BoxLayout({
-        vertical: false,
+        orientation: Clutter.Orientation.HORIZONTAL,
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-pill-header',
@@ -71,7 +71,7 @@ function makeMediaPill() {
     header.add_child(makeIcon('audio-x-generic-symbolic', 22));
 
     const labels = new St.BoxLayout({
-        vertical: true,
+        orientation: Clutter.Orientation.VERTICAL,
         x_expand: true,
         style_class: 'cc-pill-labels',
     });
@@ -81,7 +81,7 @@ function makeMediaPill() {
     pill.add_child(header);
 
     const controls = new St.BoxLayout({
-        vertical: false,
+        orientation: Clutter.Orientation.HORIZONTAL,
         x_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-media-controls',
     });
@@ -123,12 +123,12 @@ export default class ControlCenterExtension extends Extension {
         });
 
         const content = new St.BoxLayout({
-            vertical: true,
+            orientation: Clutter.Orientation.VERTICAL,
             style_class: 'cc-content',
         });
 
         const connectivity = new St.BoxLayout({
-            vertical: false,
+            orientation: Clutter.Orientation.HORIZONTAL,
             style_class: 'cc-pill-row',
         });
         connectivity.add_child(makePill({
@@ -146,7 +146,7 @@ export default class ControlCenterExtension extends Extension {
         content.add_child(makeMediaPill());
 
         const modes = new St.BoxLayout({
-            vertical: false,
+            orientation: Clutter.Orientation.HORIZONTAL,
             style_class: 'cc-pill-row',
         });
         modes.add_child(makePill({
