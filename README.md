@@ -13,7 +13,7 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Bluetooth power through the BlueZ Adapter1 D-Bus API.
 - Focus / Do Not Disturb through `org.gnome.desktop.notifications` (`show-banners`).
 - Display brightness through GNOME Shell's `org.gnome.Shell.Brightness` D-Bus interface (GNOME 49+).
-- Output volume through GVC / the PulseAudio-compatible audio server, including PipeWire-Pulse.
+- Output volume and mute through GVC / the PulseAudio-compatible audio server, including PipeWire-Pulse.
 - MPRIS media controls for the active session player (previous, play/pause, next, title, and artist).
 - Airplane Mode coordination for Wi-Fi, Bluetooth, and WWAN when the modem exposes that control; the previous radio states are restored when disabling it.
 - Audio output switching through GVC; click the speaker shortcut to cycle through available output sinks.
