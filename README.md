@@ -2,130 +2,109 @@
 
 A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pills.
 
-> **Status:** Early MVP. The initial panel UI and per-pill Blur my Shell hooks are in place. System-control integrations are not implemented yet, and the extension has not yet been runtime-tested on a GNOME desktop.
+> **Status:** Front-end MVP scaffold. The panel indicator and popup UI are implemented in source. Runtime behavior still needs testing on a real GNOME session. System controls are visual placeholders.
 
-## Vision
+## What is implemented
 
-Bring the convenience and visual language of macOS Control Center to GNOME Shell while keeping the experience native to the desktop.
+- Panel indicator to open the Control Center.
+- macOS-inspired compact popup layout.
+- Separate pill surfaces for Wi-Fi, Bluetooth, media, Airplane Mode, Focus, Display, and Sound.
+- Each pill has its own `bms-popup-blur-target` class.
+- Transparent popup/layout shell with a translucent fallback style on individual pills.
+- GNOME Shell ES module extension structure.
 
-The outer popup is only a layout container. **Each pill is its own Blur my Shell target** so the blur follows the pill's own rounded corners and leaves the gaps between pills visually clear.
-
-## Current UI
-
-The first UI scaffold includes:
-
-- A panel indicator that opens the Control Center popup.
-- Wi-Fi and Bluetooth tiles.
-- A media-player preview tile.
-- Airplane Mode and Focus tiles.
-- Display and Sound placeholder tiles.
-- Separate `bms-popup-blur-target` classes on each pill surface.
-
-The tiles are currently visual placeholders. They do not yet read or change Wi-Fi, Bluetooth, airplane mode, media, brightness, or volume system state.
-
-## Liquid Glass and Blur my Shell
+## Important: per-pill blur
 
 [Blur my Shell](https://github.com/aunetx/blur-my-shell) is the optional blur provider.
 
-The extension integration guide documents the `bms-popup-blur-target` class. This project applies that class to **each individual pill surface**, not to the popup root:
+The extension integration guide documents `bms-popup-blur-target`. This class is applied to **each individual pill**, never just to the outer popup. Blur my Shell follows each pill's own `border-radius`, leaving the gaps between pills visually distinct.
 
-- Every pill/card that should be blurred gets `bms-popup-blur-target`.
-- The pill's own `border-radius` defines its blur boundary.
-- The popup root is a transparent layout shell, not a single blur surface.
-- When Blur my Shell is unavailable, the CSS provides a translucent fallback for each pill.
+The popup itself is a transparent layout container. Without Blur my Shell, each pill retains a translucent CSS fallback.
 
-See the official [Blur my Shell extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md).
+Official reference: [Blur my Shell extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md).
 
-## Requirements
+## Compatibility
 
-- GNOME Shell **49** (initial development target).
-- Blur my Shell is optional, but required for the intended dynamic blur effect.
-- A GNOME session in which extensions can be enabled.
+The metadata currently allows installation on GNOME Shell 45–50. This is an initial compatibility range to avoid blocking installation on common ES-module-based GNOME releases; it is **not a claim that every version has been runtime-tested**. The initial development target remains GNOME Shell 49.
 
-The `shell-version` metadata currently declares GNOME Shell 49 only. Broader version support should be added only after testing.
-
-## Install for development
-
-Clone the repository:
+## Install from source
 
 ```bash
 git clone https://github.com/abazic/Control-Center-for-GNOME.git
 cd Control-Center-for-GNOME
-```
 
-Package and install the extension:
-
-```bash
 gnome-extensions pack --force --out-dir=dist .
 gnome-extensions install --force dist/control-center@abazic.github.io.shell-extension.zip
 gnome-extensions enable control-center@abazic.github.io
 ```
 
-If the extension does not appear immediately, log out and back in (especially on Wayland), then enable it from GNOME Extensions.
+After installation, the **Control Center grid icon should appear in the GNOME top panel**. Click it to open the popup.
 
-To inspect extension errors:
+If the extension was installed before this update, reinstall the newly packaged ZIP so that the updated metadata and code replace the old copy. On Wayland, log out and log back in if GNOME Shell does not reload the extension.
+
+Check whether GNOME sees the extension:
+
+```bash
+gnome-extensions list --enabled
+gnome-extensions info control-center@abazic.github.io
+```
+
+Inspect Shell errors:
 
 ```bash
 journalctl -f -o cat /usr/bin/gnome-shell
 ```
 
+If it does not appear or fails to enable, include the output of the commands above and:
+
+```bash
+gnome-shell --version
+```
+
 ## Roadmap
 
-### 1. Foundation and UI
+### Front end
 
-- [x] Add GNOME extension metadata and ES module entry point.
-- [x] Add a panel indicator and Control Center popup.
-- [x] Build the initial macOS-inspired pill layout.
-- [x] Add individual `bms-popup-blur-target` classes to pill surfaces.
-- [ ] Runtime-test on GNOME Shell 49.
-- [ ] Verify independent blur on every pill with Blur my Shell enabled.
-- [ ] Verify the translucent fallback without Blur my Shell.
+- [x] Add extension metadata and ES module entry point.
+- [x] Add top-panel indicator and popup.
+- [x] Build the first Control Center pill layout.
+- [x] Assign a separate Blur my Shell target to every pill.
+- [x] Add transparent popup shell and translucent pill fallback.
+- [ ] Verify install, enable, and popup rendering on real GNOME sessions.
+- [ ] Tune layout against the supplied macOS Control Center reference.
+- [ ] Add hover, pressed, active, and disabled visual states.
+- [ ] Add responsive sizing and light/dark appearance handling.
 
-### 2. System controls
+### System integrations
 
-- [ ] Read and toggle Wi-Fi state.
-- [ ] Read and toggle Bluetooth state.
-- [ ] Implement Airplane Mode where supported.
-- [ ] Integrate MPRIS media playback controls.
-- [ ] Integrate Focus / Do Not Disturb.
-- [ ] Connect Display brightness control.
-- [ ] Connect Sound volume and output controls.
-- [ ] Add a shortcut to GNOME Settings.
-
-### 3. Polish and compatibility
-
-- [ ] Add interaction states, transitions, and accessibility support.
-- [ ] Handle unavailable services and hardware safely.
-- [ ] Test performance and memory cleanup.
-- [ ] Test additional GNOME Shell versions before declaring support.
-- [ ] Add screenshots and release packaging.
+- [ ] Wi-Fi and Bluetooth state/actions.
+- [ ] Airplane Mode where supported.
+- [ ] MPRIS media controls.
+- [ ] Focus / Do Not Disturb.
+- [ ] Display brightness.
+- [ ] Sound volume and output selection.
+- [ ] GNOME Settings shortcuts.
 
 ## Project structure
 
 ```text
 .
-├── extension.js    # GNOME Shell extension entry point and popup UI
-├── metadata.json   # Extension metadata and supported Shell version
-├── stylesheet.css  # Liquid Glass pill styling
-└── README.md
+├── extension.js
+├── metadata.json
+├── stylesheet.css
+├── README.md
+└── .gitignore
 ```
 
 ## Contributing
 
-Issues and pull requests are welcome. When reporting a bug, include:
-
-- GNOME Shell version.
-- Wayland or X11 session.
-- Whether Blur my Shell is installed and enabled.
-- Relevant GNOME Shell log output.
-
-Please do not mark a feature complete until it is implemented and tested on a real GNOME session.
+Bug reports and pull requests are welcome. Include your GNOME Shell version, Wayland/X11 session type, whether Blur my Shell is enabled, and relevant Shell logs.
 
 ## Credits
 
-- [Blur my Shell](https://github.com/aunetx/blur-my-shell) — optional blur engine and per-surface integration.
-- macOS Control Center — visual reference for the layout and interaction concept.
+- [Blur my Shell](https://github.com/aunetx/blur-my-shell) — optional blur provider and documented per-surface integration.
+- macOS Control Center — visual reference.
 
 ## License
 
-No license has been selected yet. Licensing information will be added once the project license is chosen.
+No license has been selected yet.
