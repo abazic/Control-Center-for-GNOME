@@ -25,6 +25,58 @@ const MIRROR_UUID = 'mirror@distro.com';
 const CAFFEINE_UUID = 'caffeine@patapon.info';
 const CAFFEINE_TOGGLE_KEY = 'cli-toggle';
 
+const SPANS = {small: [1, 1], medium: [2, 1], large: [2, 2]};
+const STEP = SMALL + SPACING;
+
+// Grid 4 kolom: setiap tile menempati slot kosong pertama yang muat.
+function placeTiles(grid, tiles) {
+    const used = new Set();
+    let rows = 0;
+    for (const {actor, size} of tiles) {
+        const [w, h] = SPANS[size];
+        const cells = (c, r) => Array.from({length: w * h},
+            (_, i) => `${c + i % w},${r + Math.floor(i / w)}`);
+        let col = 0, row = 0;
+        while (col + w > 4 || cells(col, row).some(k => used.has(k))) {
+            if (++col >= 4) {
+                col = 0;
+                row++;
+            }
+        }
+        cells(col, row).forEach(k => used.add(k));
+        rows = Math.max(rows, row + h);
+        actor.set_position(col * STEP, row * STEP);
+        actor.set_size(w * STEP - SPACING, h * STEP - SPACING);
+    }
+    grid.set_size(CONTENT_WIDTH, rows * STEP - SPACING);
+}
+
+// Tampilan isi tile sesuai ukurannya.
+function styleTile(actor, size) {
+    const small = size === 'small';
+    const padding = small ? '0' : size === 'medium' ? '0 13px' : '12px';
+    actor.set_style(`border-radius: 29px; padding: ${padding};`);
+
+    for (const text of [actor._ccCopy, actor._ccLabel]) {
+        if (text)
+            text.visible = !small;
+    }
+    if (actor._ccSymbol) {
+        const symbolSize = small ? 46 : SYMBOL_SIZE;
+        actor._ccSymbol.set_size(symbolSize, symbolSize);
+        actor._ccSymbol.set_style(`border-radius: 29px;`);
+        actor._ccSymbol.x_expand = small;
+        actor._ccSymbol.x_align = Clutter.ActorAlign.CENTER;
+        actor._ccSymbol.y_align = Clutter.ActorAlign.CENTER;
+    }
+    if (actor._ccIcon)
+        actor._ccIcon.set_icon_size(small ? 25 : SYMBOL_ICON_SIZE);
+
+    for (const option of Object.keys(SPANS))
+        actor.remove_style_class_name(`cc-tile-size-${option}`);
+    actor.add_style_class_name(`cc-tile-size-${size}`);
+}
+
 function label(text, styleClass) {
     return new St.Label({text, style_class: styleClass, x_expand: true});
 }
@@ -424,64 +476,33 @@ export default class ControlCenterExtension extends Extension {
         this._content = content;
         this._connectTileSizeSettings();
 
-        const composition = new St.BoxLayout({
-            style_class: 'cc-main-grid',
-            x_expand: true,
-        });
-        const left = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
-            style_class: 'cc-left-column',
-            x_expand: false,
-        });
+        const grid = new St.Widget({layout_manager: new Clutter.FixedLayout()});
+        this._grid = grid;
+
         this._wifiTile = makeWifiTile(
             () => this._controller.toggleWifi(),
             () => this._openWifiMenu()
         );
-        left.add_child(this._wifiTile);
-
-        const connectivity = new St.BoxLayout({style_class: 'cc-circle-row'});
-        this._bluetoothButton = makeCircle(
-            'bluetooth-active-symbolic', 'Bluetooth', () => this._controller.toggleBluetooth());
-        connectivity.add_child(this._bluetoothButton);
-        this._airplaneButton = makeCircle(
-            'airplane-mode-symbolic', 'Airplane Mode', () => this._controller.toggleAirplaneMode());
-        connectivity.add_child(this._airplaneButton);
-        left.add_child(connectivity);
-
-        this._powerModeButton = makeCircle(
-            'power-profile-balanced-symbolic', 'Power Mode', () => this._openPowerModeMenu());
-        left.add_child(this._powerModeButton);
-
-        this._focusTile = makeFocusTile(() => this._controller.toggleFocus());
-        left.add_child(this._focusTile);
-
-        composition.add_child(left);
-
-        const mediaColumn = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
-            style_class: 'cc-media-column',
-        });
         this._mediaTile = makeMediaTile(
             () => this._mediaController.previous(),
             () => this._mediaController.playPause(),
             () => this._mediaController.next()
         );
-        mediaColumn.add_child(this._mediaTile);
-
-        const mediaActions = new St.BoxLayout({
-            style_class: 'cc-media-actions',
-        });
+        this._bluetoothButton = makeCircle(
+            'bluetooth-active-symbolic', 'Bluetooth', () => this._controller.toggleBluetooth());
+        this._airplaneButton = makeCircle(
+            'airplane-mode-symbolic', 'Airplane Mode', () => this._controller.toggleAirplaneMode());
+        this._focusTile = makeFocusTile(() => this._controller.toggleFocus());
         this._mirrorButton = makeCircle(
             'phone-symbolic', 'Mirror Android device', () => this._openMirrorMenu());
-        mediaActions.add_child(this._mirrorButton);
         this._caffeineButton = makeCircle(
             'alarm-clock-symbolic', 'Caffeine Timer', () => this._openCaffeineMenu());
-        mediaActions.add_child(this._caffeineButton);
         this._syncCaffeineState();
-        mediaColumn.add_child(mediaActions);
 
-        composition.add_child(mediaColumn);
-        content.add_child(composition);
+        for (const tile of [this._wifiTile, this._mediaTile, this._bluetoothButton,
+            this._airplaneButton, this._focusTile, this._mirrorButton, this._caffeineButton])
+            grid.add_child(tile);
+        content.add_child(grid);
 
         this._brightnessTile = makeSliderTile(
             'Display', 'display-brightness-symbolic', 'weather-clear-symbolic', 'cc-brightness-fill',
@@ -497,13 +518,17 @@ export default class ControlCenterExtension extends Extension {
             style_class: 'cc-shortcuts',
             x_expand: true,
         });
-        for (const [name, accessibleName] of [
-            ['contrast-symbolic', 'Appearance'],
-            ['accessories-calculator-symbolic', 'Calculator'],
-            ['preferences-system-time-symbolic', 'Timer'],
-            ['camera-photo-symbolic', 'Screenshot'],
-        ])
-            shortcuts.add_child(makeCircle(name, accessibleName));
+        this._powerModeButton = makeCircle(
+            'power-profile-balanced-symbolic', 'Power Mode', () => this._openPowerModeMenu());
+        for (const button of [
+            this._powerModeButton,
+            makeCircle('accessories-calculator-symbolic', 'Calculator'),
+            makeCircle('preferences-system-time-symbolic', 'Timer'),
+            makeCircle('camera-photo-symbolic', 'Screenshot'),
+        ]) {
+            styleTile(button, 'small');
+            shortcuts.add_child(button);
+        }
         content.add_child(shortcuts);
 
         const editControlRow = new St.BoxLayout({
@@ -650,84 +675,40 @@ export default class ControlCenterExtension extends Extension {
             caffeine: 'caffeine-tile-size',
         };
         this._tileSizeSignals = [];
-        for (const [tile, key] of Object.entries(this._tileSizeKeys)) {
+        for (const key of Object.values(this._tileSizeKeys)) {
             const signal = this._settings.connect(`changed::${key}`, () => {
-                this._applyTileSize(tile);
+                this._applyAllTileSizes();
             });
             this._tileSizeSignals.push(signal);
         }
     }
 
-    _applyTileSize(tileName) {
-        const actorMap = {
-            wifi: this._wifiTile,
-            bluetooth: this._bluetoothButton,
-            airplane: this._airplaneButton,
-            focus: this._focusTile,
-            media: this._mediaTile,
-            mirror: this._mirrorButton,
-            caffeine: this._caffeineButton,
-        };
-        const actor = actorMap[tileName];
-        const key = this._tileSizeKeys?.[tileName];
-        if (!actor || !key || !this._settings)
+    _applyAllTileSizes() {
+        if (!this._grid || !this._settings)
             return;
 
-        const value = this._settings.get_string(key);
-        const size = ['small', 'medium', 'large'].includes(value) ? value : 'small';
-        const width = size === 'small' ? SMALL : MEDIUM_WIDTH;
-        const height = size === 'large' ? LARGE_HEIGHT : SMALL;
-        actor.set_size(width, height);
-
-        // Wi-Fi and Focus use stylesheet size classes for their outer surface.
-        // Clear their construction-time inline pill dimensions so those
-        // declarations cannot override the selected Small/Medium/Large class.
-        if (tileName === 'wifi' || tileName === 'focus')
-            actor.set_style('');
-        else {
-            const radius = size === 'large' ? 29 : height / 2;
-            const padding = size === 'small' ? '0' : size === 'medium' ? '0 13px' : '12px';
-            actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${radius}px; padding: ${padding};`);
-        }
-
-        // Explicitly update child visibility and symbol geometry for Wi-Fi and
-        // Focus; CSS alone can leave the initial pill layout intact on Shell.
-        if (actor._ccCopy) {
-            if (size === 'small')
-                actor._ccCopy.hide();
-            else
-                actor._ccCopy.show();
-        }
-        if (actor._ccSymbol) {
-            const symbolSize = size === 'small' ? 46 : SYMBOL_SIZE;
-            actor._ccSymbol.set_size(symbolSize, symbolSize);
-            actor._ccSymbol.set_style(`width: ${symbolSize}px; min-width: ${symbolSize}px; max-width: ${symbolSize}px; height: ${symbolSize}px; min-height: ${symbolSize}px; max-height: ${symbolSize}px; border-radius: ${size === 'large' ? 29 : 30}px;`);
-        }
-        if (actor._ccIcon)
-            actor._ccIcon.set_icon_size(size === 'small' ? 25 : SYMBOL_ICON_SIZE);
-        if (actor._ccLabel) {
-            if (size === 'small')
-                actor._ccLabel.hide();
-            else
-                actor._ccLabel.show();
-        }
-        for (const option of ['small', 'medium', 'large'])
-            actor.remove_style_class_name(`cc-tile-size-${option}`);
-        actor.add_style_class_name(`cc-tile-size-${size}`);
-
-        // A tile's preferred size changes its parent's natural allocation.
-        // Queue layout from the tile up to the menu content so sibling tiles
-        // are re-positioned instead of retaining their previous allocation.
-        let layoutActor = actor;
-        while (layoutActor) {
-            layoutActor.queue_relayout();
-            layoutActor = layoutActor.get_parent();
-        }
-    }
-
-    _applyAllTileSizes() {
-        for (const tileName of Object.keys(this._tileSizeKeys ?? {}))
-            this._applyTileSize(tileName);
+        // Urutan di sini menentukan posisi di grid.
+        const tiles = [
+            ['wifi', this._wifiTile],
+            ['media', this._mediaTile],
+            ['bluetooth', this._bluetoothButton],
+            ['airplane', this._airplaneButton],
+            ['focus', this._focusTile],
+            ['mirror', this._mirrorButton],
+            ['caffeine', this._caffeineButton],
+        ].map(([name, actor]) => {
+            const value = this._settings.get_string(this._tileSizeKeys[name]);
+            let size = SPANS[value] ? value : 'small';
+            if (name === 'media') {
+                // Isi Media Player hanya dirancang untuk ukuran Large.
+                size = 'large';
+                actor.set_style('border-radius: 29px; padding: 14px;');
+            } else {
+                styleTile(actor, size);
+            }
+            return {actor, size};
+        });
+        placeTiles(this._grid, tiles);
     }
 
     _syncNativeQuickSettingsVisibility() {
@@ -916,6 +897,7 @@ export default class ControlCenterExtension extends Extension {
         this._restoreNativeQuickSettings();
         this._settings = null;
         this._content = null;
+        this._grid = null;
         this._editControlRow = null;
         if (this._caffeineSettings && this._caffeineSignal)
             this._caffeineSettings.disconnect(this._caffeineSignal);
