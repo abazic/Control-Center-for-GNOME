@@ -31,7 +31,7 @@ function makeSurface(styleClass, vertical = false) {
 function makeWifiTile() {
     const tile = makeSurface('cc-wifi-tile');
     const symbol = new St.BoxLayout({style_class: 'cc-symbol-disc', y_align: Clutter.ActorAlign.CENTER});
-    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', 35));
+    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', 30));
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -61,7 +61,7 @@ function makeCircle(name, accessibleName) {
 function makeFocusTile() {
     const tile = makeSurface('cc-focus-tile');
     const symbol = new St.BoxLayout({style_class: 'cc-symbol-disc', y_align: Clutter.ActorAlign.CENTER});
-    symbol.add_child(icon('weather-clear-night-symbolic', 35));
+    symbol.add_child(icon('weather-clear-night-symbolic', 30));
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
