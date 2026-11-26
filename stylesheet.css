@@ -154,9 +154,11 @@
 /* Full-width rows span the same four-column grid. */
 .cc-slider-tile {
     width: 259px;
+    height: 60px;
     min-width: 259px;
+    min-height: 60px;
     max-width: 259px;
-    min-height: 58px;
+    max-height: 60px;
     padding: 8px 11px;
     border-radius: 22px;
     spacing: 6px;
