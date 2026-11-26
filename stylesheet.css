@@ -389,11 +389,11 @@
 .cc-tile-size-medium .cc-copy,
 .cc-tile-size-large .cc-copy { opacity: 1; width: auto; max-width: 120px; }
 .cc-round-control.cc-tile-size-medium { border-radius: 30px; }
-.cc-round-control.cc-tile-size-large { border-radius: 30px; }
+.cc-round-control.cc-tile-size-large { border-radius: 29px; }
 .cc-wifi-tile.cc-tile-size-medium,
 .cc-focus-tile.cc-tile-size-medium { padding: 0 6px; spacing: 5px; }
 .cc-wifi-tile.cc-tile-size-large,
-.cc-focus-tile.cc-tile-size-large { padding: 12px; spacing: 8px; }
+.cc-focus-tile.cc-tile-size-large { padding: 12px; spacing: 8px; border-radius: 29px; }
 .cc-wifi-tile.cc-tile-size-small,
 .cc-focus-tile.cc-tile-size-small { padding: 0; spacing: 0; justify-content: center; }
 .cc-wifi-tile.cc-tile-size-small .cc-copy,
