@@ -106,13 +106,14 @@ gnome-shell --version
 - [x] Audio output switching through GVC (cycle available output sinks).
 - [x] Mirror extension hand-off (`mirror@distro.com`; opens its native device menu).
 - [x] Caffeine extension hand-off (`caffeine@patapon.info`; opens its timer menu and tracks active state).
-- [ ] GNOME Settings shortcuts.
+- [x] Extension preferences entry point (GNOME Extensions app / Edit Control; preference content to follow).
 
 ## Project structure
 
 ```text
 .
 ├── extension.js
+├── prefs.js
 ├── system.js
 ├── media.js
 ├── metadata.json
