@@ -113,6 +113,8 @@ function makeMediaTile() {
     tile.y_align = Clutter.ActorAlign.START;
 
     const header = new St.BoxLayout({
+        orientation: Clutter.Orientation.VERTICAL,
+        x_align: Clutter.ActorAlign.START,
         style_class: 'cc-media-header',
     });
     const artwork = new St.Widget({style_class: 'cc-artwork'});
