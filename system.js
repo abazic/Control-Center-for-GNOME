@@ -7,7 +7,6 @@ const NM_PATH = '/org/freedesktop/NetworkManager';
 const NM_IFACE = 'org.freedesktop.NetworkManager';
 const BLUEZ_NAME = 'org.bluez';
 const BLUEZ_ROOT = '/';
-const BLUEZ_MANAGER = 'org.freedesktop.DBus.ObjectManager';
 const BLUEZ_ADAPTER = 'org.bluez.Adapter1';
 function unpackBoolean(variant) {
     return variant ? variant.deep_unpack() : null;
@@ -294,7 +293,6 @@ export class SystemController {
         try {
             this._mixer = new Gvc.MixerControl({
                 name: 'Control Center',
-                track_monitor: true,
             });
 
             this._signals.push([
