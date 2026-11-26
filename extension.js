@@ -232,6 +232,7 @@ export default class ControlCenterExtension extends Extension {
 
         const editControlRow = new St.BoxLayout({
             x_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
             style_class: 'cc-edit-control-row',
         });
         const editControlButton = new St.Button({
