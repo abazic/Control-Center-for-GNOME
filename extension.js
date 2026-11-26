@@ -252,12 +252,17 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
     const track = new St.Widget({x_expand: true, style_class: 'cc-slider-track'});
     const fill = new St.Widget({style_class: `cc-slider-fill ${fillClass}`});
     track.add_child(fill);
-    const setValue = value => {
-        const normalized = Math.max(0, Math.min(1, value));
-        fill.set_style(`width: ${normalized * 100}%;`);
-        if (onValueChanged)
-            onValueChanged(normalized);
+    let currentValue = Math.max(0, Math.min(1, initialValue));
+    const updateFillWidth = () => {
+        fill.set_width(currentValue * track.get_width());
     };
+    const setValue = value => {
+        currentValue = Math.max(0, Math.min(1, value));
+        updateFillWidth();
+        if (onValueChanged)
+            onValueChanged(currentValue);
+    };
+    track.connect('notify::width', updateFillWidth);
     if (onValueChanged) {
         track.reactive = true;
         track.can_focus = true;
@@ -279,8 +284,11 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
             return Clutter.EVENT_STOP;
         });
     }
-    fill.set_style(`width: ${initialValue * 100}%;`);
-    tile._ccSetValue = value => fill.set_style(`width: ${Math.max(0, Math.min(1, value)) * 100}%;`);
+    updateFillWidth();
+    tile._ccSetValue = value => {
+        currentValue = Math.max(0, Math.min(1, value));
+        updateFillWidth();
+    };
     tile._ccSetEnabled = enabled => {
         track.reactive = Boolean(enabled && onValueChanged);
         track.can_focus = Boolean(enabled && onValueChanged);
@@ -492,9 +500,10 @@ export default class ControlCenterExtension extends Extension {
 
         if (this._bluetoothButton) {
             const glyph = this._bluetoothButton._ccIcon;
-            if (glyph)
+            if (glyph) {
                 glyph.icon_name = state.bluetoothEnabled
-                ? 'bluetooth-active-symbolic' : 'bluetooth-disabled-symbolic';
+                    ? 'bluetooth-active-symbolic' : 'bluetooth-disabled-symbolic';
+            }
             this._bluetoothButton.accessible_name = state.bluetoothAvailable
                 ? (state.bluetoothEnabled ? 'Bluetooth On' : 'Bluetooth Off')
                 : 'Bluetooth unavailable';
@@ -504,9 +513,10 @@ export default class ControlCenterExtension extends Extension {
 
         if (this._airplaneButton) {
             const glyph = this._airplaneButton._ccIcon;
-            if (glyph)
+            if (glyph) {
                 glyph.icon_name = state.airplaneEnabled
-                ? 'airplane-mode-symbolic' : 'network-wireless-signal-excellent-symbolic';
+                    ? 'airplane-mode-symbolic' : 'network-wireless-signal-excellent-symbolic';
+            }
             this._airplaneButton.accessible_name = state.airplaneEnabled
                 ? 'Airplane Mode On' : 'Airplane Mode Off';
             this._airplaneButton.reactive = state.airplaneAvailable;
@@ -721,7 +731,7 @@ export default class ControlCenterExtension extends Extension {
     }
 
     _syncCaffeineState() {
-        if (!this._caffeineButton || !this._caffeineSettings)
+        if (this._destroying || !this._caffeineButton || !this._caffeineSettings)
             return;
 
         const active = this._caffeineSettings.get_boolean(CAFFEINE_TOGGLE_KEY);
@@ -781,15 +791,16 @@ export default class ControlCenterExtension extends Extension {
 
     _syncMediaState() {
         const state = this._mediaState;
-        if (!state || !this._mediaTile)
+        if (!state || this._destroying || !this._mediaTile)
             return;
         this._mediaTile._ccTitleLabel.text = state.title;
         this._mediaTile._ccArtistLabel.text = state.artist;
         const playIcon = this._mediaTile._ccPlayButton._ccIcon;
         const playing = state.playbackStatus === 'Playing';
-        if (playIcon)
+        if (playIcon) {
             playIcon.icon_name = playing
-            ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
+                ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
+        }
         this._mediaTile._ccPlayButton.accessible_name = playing ? 'Pause' : 'Play';
         const canTogglePlayback = state.canPlay || state.canPause;
         this._mediaTile._ccPlayButton.reactive = canTogglePlayback;
