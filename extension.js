@@ -51,7 +51,7 @@ function makeSurface(styleClass, vertical = false) {
     });
 }
 
-function makeWifiTile(onClick = null) {
+function makeWifiTile(onClick = null, onMenuClick = null) {
     const tile = makeSurface('cc-wifi-tile');
     tile.reactive = Boolean(onClick);
     tile.can_focus = Boolean(onClick);
@@ -75,6 +75,22 @@ function makeWifiTile(onClick = null) {
     symbolIcon.set_x_align(Clutter.ActorAlign.CENTER);
     symbolIcon.set_y_align(Clutter.ActorAlign.CENTER);
     symbol.add_child(symbolIcon);
+    if (onMenuClick) {
+        const menuButton = new St.Button({
+            reactive: true,
+            can_focus: true,
+            track_hover: true,
+            style_class: 'cc-wifi-menu-button',
+            accessible_name: 'Choose Wi-Fi network',
+        });
+        menuButton.set_size(17, 17);
+        menuButton.set_child(icon('pan-down-symbolic', 10, 'cc-wifi-menu-icon'));
+        menuButton.set_x_align(Clutter.ActorAlign.END);
+        menuButton.set_y_align(Clutter.ActorAlign.END);
+        menuButton.connect('clicked', onMenuClick);
+        symbol.add_child(menuButton);
+        tile._ccMenuButton = menuButton;
+    }
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -352,7 +368,10 @@ export default class ControlCenterExtension extends Extension {
             style_class: 'cc-left-column',
             x_expand: false,
         });
-        this._wifiTile = makeWifiTile(() => this._openWifiMenu());
+        this._wifiTile = makeWifiTile(
+            () => this._controller.toggleWifi(),
+            () => this._openWifiMenu()
+        );
         left.add_child(this._wifiTile);
 
         const connectivity = new St.BoxLayout({style_class: 'cc-circle-row'});
