@@ -275,6 +275,11 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
 
 export default class ControlCenterExtension extends Extension {
     enable() {
+        this._settings = this.getSettings();
+        this._quickSettingsSizeSignal = this._settings.connect(
+            'changed::quick-settings-size',
+            () => this._syncQuickSettingsSize()
+        );
         this._initCaffeineIntegration();
         this._mediaController = new MediaController(state => {
             this._mediaState = state;
@@ -293,6 +298,7 @@ export default class ControlCenterExtension extends Extension {
         this._indicator.menu.actor.add_style_class_name('cc-control-center-menu');
         this._buildMenu();
         Main.panel.addToStatusArea(this.uuid, this._indicator);
+        this._queueQuickSettingsIntegration();
     }
 
     _buildMenu() {
@@ -305,6 +311,7 @@ export default class ControlCenterExtension extends Extension {
             orientation: Clutter.Orientation.VERTICAL,
             style_class: 'cc-content',
         });
+        this._content = content;
 
         const composition = new St.BoxLayout({
             style_class: 'cc-main-grid',
@@ -403,6 +410,7 @@ export default class ControlCenterExtension extends Extension {
         editControlRow.add_child(editControlButton);
         editControlRow.add_child(editControlRightSpacer);
         content.add_child(editControlRow);
+        this._editControlRow = editControlRow;
 
         item.add_child(content);
         this._indicator.menu.addMenuItem(item);
@@ -459,6 +467,104 @@ export default class ControlCenterExtension extends Extension {
                 muteIcon.icon_name = state.muted
                     ? 'audio-volume-muted-symbolic' : 'audio-volume-high-symbolic';
         }
+    }
+
+    _queueQuickSettingsIntegration() {
+        if (this._quickSettingsSource)
+            return;
+
+        let attempts = 0;
+        this._quickSettingsSource = GLib.timeout_add_seconds(
+            GLib.PRIORITY_DEFAULT,
+            1,
+            () => {
+                attempts++;
+                const quickSettings = Main.panel.statusArea.quickSettings;
+                const grid = quickSettings?.menu?._grid;
+
+                if (!grid || !this._content) {
+                    if (attempts >= 20) {
+                        this._quickSettingsSource = 0;
+                        log('Control Center: native Quick Settings grid was not available');
+                        return GLib.SOURCE_REMOVE;
+                    }
+                    return GLib.SOURCE_CONTINUE;
+                }
+
+                const parent = grid.get_parent();
+                if (!parent) {
+                    if (attempts >= 20) {
+                        this._quickSettingsSource = 0;
+                        return GLib.SOURCE_REMOVE;
+                    }
+                    return GLib.SOURCE_CONTINUE;
+                }
+
+                this._nativeQuickSettings = quickSettings;
+                this._quickSettingsGrid = grid;
+                this._quickSettingsParent = parent;
+                this._quickSettingsIndex = parent.get_children().indexOf(grid);
+
+                parent.remove_child(grid);
+                grid.add_style_class_name('cc-native-quick-settings');
+                this._syncQuickSettingsSize();
+
+                const insertIndex = Math.max(
+                    0,
+                    this._content.get_children().length - (this._editControlRow ? 1 : 0)
+                );
+                this._content.insert_child_at_index(grid, insertIndex);
+
+                // The original indicator is hidden only after its live grid is
+                // successfully hosted by Control Center.
+                quickSettings.container.hide();
+                this._quickSettingsSource = 0;
+                return GLib.SOURCE_REMOVE;
+            }
+        );
+    }
+
+    _syncQuickSettingsSize() {
+        if (!this._quickSettingsGrid || !this._settings)
+            return;
+
+        for (const size of ['small', 'medium', 'large'])
+            this._quickSettingsGrid.remove_style_class_name(`quick-settings-size-${size}`);
+
+        const size = this._settings.get_string('quick-settings-size');
+        const supportedSize = ['small', 'medium', 'large'].includes(size)
+            ? size : 'small';
+        this._quickSettingsGrid.add_style_class_name(
+            `quick-settings-size-${supportedSize}`
+        );
+    }
+
+    _restoreNativeQuickSettings() {
+        if (this._quickSettingsSource) {
+            GLib.Source.remove(this._quickSettingsSource);
+            this._quickSettingsSource = 0;
+        }
+
+        const grid = this._quickSettingsGrid;
+        const parent = this._quickSettingsParent;
+        if (grid && parent) {
+            const currentParent = grid.get_parent();
+            if (currentParent)
+                currentParent.remove_child(grid);
+
+            parent.insert_child_at_index(
+                grid,
+                Math.max(0, this._quickSettingsIndex)
+            );
+            grid.remove_style_class_name('cc-native-quick-settings');
+            for (const size of ['small', 'medium', 'large'])
+                grid.remove_style_class_name(`quick-settings-size-${size}`);
+        }
+
+        this._nativeQuickSettings?.container?.show();
+        this._quickSettingsGrid = null;
+        this._quickSettingsParent = null;
+        this._nativeQuickSettings = null;
     }
 
     _openPreferences() {
@@ -562,6 +668,13 @@ export default class ControlCenterExtension extends Extension {
     }
 
     disable() {
+        this._restoreNativeQuickSettings();
+        if (this._settings && this._quickSettingsSizeSignal)
+            this._settings.disconnect(this._quickSettingsSizeSignal);
+        this._quickSettingsSizeSignal = 0;
+        this._settings = null;
+        this._content = null;
+        this._editControlRow = null;
         if (this._caffeineSettings && this._caffeineSignal)
             this._caffeineSettings.disconnect(this._caffeineSignal);
         this._caffeineSignal = 0;
