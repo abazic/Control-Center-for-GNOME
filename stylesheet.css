@@ -1,4 +1,4 @@
-/* Popup shell stays transparent; each tile is an independent blur target. */
+/* Grid system: circle 58px, spacing 9px, two-unit tile 125px. */
 .cc-control-center-menu {
     background-color: transparent;
     border: 0;
@@ -14,15 +14,20 @@
     box-shadow: none;
 }
 
-/* Inner layout: (2 circles + one gap) + inter-column gap + square tile. */
+/* Maximum inner width: 4 circles + 3 gaps = 259px. */
 .cc-content {
-    width: 260px;
-    padding: 10px;
+    width: 259px;
+    padding: 0;
     spacing: 9px;
 }
 
-.cc-main-grid,
+.cc-main-grid {
+    width: 259px;
+    spacing: 9px;
+}
+
 .cc-left-column {
+    width: 125px;
     spacing: 9px;
 }
 
@@ -37,8 +42,7 @@
     background-color: transparent;
 }
 
-/* Base unit: circle = 58px. Gap = 9px.
- * Pill: (2 × 58) + 9 = 125px wide, 58px high. */
+/* Pill = (2 circles + 1 gap) × 1 circle = 125 × 58px. */
 .cc-wifi-tile,
 .cc-focus-tile {
     width: 125px;
@@ -75,14 +79,19 @@
     font-size: 8px;
 }
 
-/* Two circles are separated by the same 9px base gap. */
+/* Circle = 58 × 58px; circle row = 2 circles + 1 gap = 125px. */
 .cc-circle-row {
+    width: 125px;
     spacing: 9px;
 }
 
 .cc-round-control {
     width: 58px;
     height: 58px;
+    min-width: 58px;
+    min-height: 58px;
+    max-width: 58px;
+    max-height: 58px;
     border-radius: 29px;
     padding: 0;
     background-color: rgba(0, 170, 205, 0.54);
@@ -98,7 +107,7 @@
     color: #ffffff;
 }
 
-/* Rounded square: (2 × 58) + 9 = 125px in both directions. */
+/* Rounded square = (2 circles + 1 gap)² = 125 × 125px. */
 .cc-media-tile {
     width: 125px;
     height: 125px;
@@ -142,7 +151,11 @@
     color: #eaffff;
 }
 
+/* Full-width rows span the same four-column grid. */
 .cc-slider-tile {
+    width: 259px;
+    min-width: 259px;
+    max-width: 259px;
     min-height: 58px;
     padding: 8px 11px;
     border-radius: 22px;
@@ -179,12 +192,18 @@
     width: 72%;
 }
 
+/* Four shortcut circles = 4 circles + 3 gaps = 259px. */
 .cc-shortcuts {
+    width: 259px;
     spacing: 9px;
 }
 
 .cc-shortcuts .cc-round-control {
     width: 58px;
     height: 58px;
+    min-width: 58px;
+    min-height: 58px;
+    max-width: 58px;
+    max-height: 58px;
     border-radius: 29px;
 }
