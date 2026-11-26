@@ -350,7 +350,7 @@ export default class ControlCenterExtension extends Extension {
             'phone-symbolic', 'Mirror Android device', () => this._openMirrorMenu());
         mediaActions.add_child(this._mirrorButton);
         this._caffeineButton = makeCircle(
-            'coffee-symbolic', 'Caffeine', () => this._toggleCaffeine());
+            'alarm-clock-symbolic', 'Caffeine Timer', () => this._openCaffeineMenu());
         mediaActions.add_child(this._caffeineButton);
         this._syncCaffeineState();
         mediaColumn.add_child(mediaActions);
@@ -463,12 +463,11 @@ export default class ControlCenterExtension extends Extension {
 
     _initCaffeineIntegration() {
         try {
-            const schema = Gio.SettingsSchemaSource.get_default()
-                .lookup(CAFFEINE_SCHEMA, true);
-            if (!schema)
+            const extension = Main.extensionManager.lookup(CAFFEINE_UUID);
+            if (!extension?.stateObj)
                 return;
 
-            this._caffeineSettings = new Gio.Settings({settings_schema: schema});
+            this._caffeineSettings = extension.stateObj.getSettings();
             this._caffeineSignal = this._caffeineSettings.connect(
                 `changed::${CAFFEINE_TOGGLE_KEY}`,
                 () => this._syncCaffeineState()
@@ -484,26 +483,32 @@ export default class ControlCenterExtension extends Extension {
 
         const active = this._caffeineSettings.get_boolean(CAFFEINE_TOGGLE_KEY);
         const glyph = this._caffeineButton.get_child();
-        glyph.icon_name = active ? 'coffee-symbolic' : 'coffee-symbolic';
+        glyph.icon_name = active ? 'alarm-clock-symbolic' : 'timer-symbolic';
         this._caffeineButton.opacity = active ? 255 : 190;
         this._caffeineButton.accessible_name = active
             ? 'Caffeine enabled. Click to disable'
             : 'Caffeine disabled. Click to enable';
     }
 
-    _toggleCaffeine() {
+    _openCaffeineMenu() {
         const extension = Main.extensionManager.lookup(CAFFEINE_UUID);
-        if (!extension?.stateObj || !this._caffeineSettings) {
+        const caffeineToggle = extension?.stateObj?._caffeineIndicator
+            ?.quickSettingsItems?.[0];
+
+        if (!caffeineToggle?.menu) {
             Main.notifyError(
                 'Caffeine extension unavailable',
-                'Install and enable Caffeine (caffeine@patapon.info) to use this control.'
+                'Install and enable Caffeine (caffeine@patapon.info) to use its timer.'
             );
             return;
         }
 
-        const next = !this._caffeineSettings.get_boolean(CAFFEINE_TOGGLE_KEY);
-        this._caffeineSettings.set_boolean(CAFFEINE_TOGGLE_KEY, next);
-        this._syncCaffeineState();
+        this._indicator.menu.close();
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            if (caffeineToggle.menu)
+                caffeineToggle.menu.open();
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     _openMirrorMenu() {
