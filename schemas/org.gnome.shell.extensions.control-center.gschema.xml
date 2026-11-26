@@ -4,7 +4,12 @@
     <key name="quick-settings-size" type="s">
       <default>'small'</default>
       <summary>Quick Settings tile size</summary>
-      <description>Size used for native Quick Settings tiles hosted in Control Center.</description>
+      <description>Size used for Control Center tiles.</description>
+    </key>
+    <key name="hide-native-quick-settings" type="b">
+      <default>true</default>
+      <summary>Hide native GNOME Quick Settings</summary>
+      <description>Hide the native Quick Settings panel indicator while Control Center is enabled.</description>
     </key>
   </schema>
 </schemalist>
