@@ -650,7 +650,17 @@ export default class ControlCenterExtension extends Extension {
         const height = size === 'large' ? LARGE_HEIGHT : SMALL;
         actor.set_size(width, height);
         const radius = size === 'large' ? 29 : height / 2;
-        actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${radius}px; padding: ${size === 'small' ? 0 : size === 'medium' ? '0 13px' : '12px'};`);
+        const padding = size === 'small' ? '0' : size === 'medium' ? '0 13px' : '12px';
+        const tileSurfaceStyle = `width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${radius}px; padding: ${padding};`;
+        actor.set_style(tileSurfaceStyle);
+
+        // Wi-Fi and Focus are initially constructed as pills. Force every
+        // surface property in Small mode so stale pill styling from the
+        // original actor/theme cannot survive a size change.
+        if (tileName === 'wifi' || tileName === 'focus') {
+            const small = size === 'small';
+            actor.set_style(`${tileSurfaceStyle} spacing: 0; background-color: ${small ? 'rgba(0, 177, 198, 0.48)' : 'rgba(0, 177, 198, 0.48)'}; border: 1px solid rgba(170, 250, 255, 0.48); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20);`);
+        }
 
         // Explicitly update child visibility and symbol geometry for Wi-Fi and
         // Focus; CSS alone can leave the initial pill layout intact on Shell.
