@@ -333,3 +333,14 @@
     width: 100%;
     opacity: 1;
 }
+
+
+/* Highlight the panel button while the custom Control Center popup is open. */
+.cc-indicator.cc-active {
+    background-color: rgba(255, 255, 255, 0.20);
+    border-radius: 8px;
+}
+
+.cc-indicator.cc-active .system-status-icon {
+    color: #ffffff;
+}
