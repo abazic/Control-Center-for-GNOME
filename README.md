@@ -19,7 +19,8 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Audio output switching through GVC; click the speaker shortcut to cycle through available output sinks.
 - Mirror shortcut opens the device list from the optional `Mirror` GNOME extension (`mirror@distro.com`).
 - Timer shortcut opens the optional `Caffeine` GNOME extension's timer menu (`caffeine@patapon.info`); its active state is reflected in the Control Center.
-- The live GNOME Quick Settings grid is hosted inside Control Center. Items registered by GNOME and extensions through `addExternalIndicator()` remain functional; the original panel Quick Settings entry is hidden while Control Center is enabled and restored on disable.
+- The live GNOME Quick Settings grid is hosted inside Control Center. Items registered by GNOME and extensions through `addExternalIndicator()` remain functional; the original panel Quick Settings entry is hidden while Control Center is enabled and restored on disable. Extensions that use unrelated custom popup menus are outside this grid and cannot be discovered automatically.
+- The integration currently reuses GNOME Shell's internal Quick Settings grid (`menu._grid`), because GNOME's public extension API documents adding items but not enumerating or relocating every existing item. This internal hook must be runtime-tested and may need adjustment after Shell updates.
 - Quick Settings tile size is configurable in Preferences (Small by default, Medium, Large).
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
@@ -109,7 +110,7 @@ gnome-shell --version
 - [x] Audio output switching through GVC (cycle available output sinks).
 - [x] Mirror extension hand-off (`mirror@distro.com`; opens its native device menu).
 - [x] Caffeine extension hand-off (`caffeine@patapon.info`; opens its timer menu and tracks active state).
-- [x] Extension preferences entry point (GNOME Extensions app / Edit Control; preference content to follow).
+- [x] Extension preferences entry point and configurable Quick Settings tile size.
 
 ## Project structure
 
