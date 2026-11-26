@@ -6,9 +6,13 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const CIRCLE = 60;
+const SMALL = 60;
 const SPACING = 10;
-const GRID_UNIT = (2 * CIRCLE) + SPACING;
+const MEDIUM_WIDTH = (2 * SMALL) + SPACING;
+const MEDIUM_HEIGHT = SMALL;
+const LARGE_WIDTH = (2 * SMALL) + SPACING;
+const LARGE_HEIGHT = (2 * SMALL) + SPACING;
+const CONTENT_WIDTH = (4 * SMALL) + (3 * SPACING);
 const PILL_INSET = 13;
 const SYMBOL_SIZE = 33;
 const SYMBOL_ICON_SIZE = 17;
@@ -33,8 +37,8 @@ function makeSurface(styleClass, vertical = false) {
 
 function makeWifiTile() {
     const tile = makeSurface('cc-wifi-tile');
-    tile.set_size(GRID_UNIT, CIRCLE);
-    tile.set_style(`width: ${GRID_UNIT}px; min-width: ${GRID_UNIT}px; max-width: ${GRID_UNIT}px; height: ${CIRCLE}px; min-height: ${CIRCLE}px; max-height: ${CIRCLE}px; border-radius: ${CIRCLE / 2}px; padding: 0 ${PILL_INSET}px;`);
+    tile.set_size(MEDIUM_WIDTH, MEDIUM_HEIGHT);
+    tile.set_style(`width: ${MEDIUM_WIDTH}px; min-width: ${MEDIUM_WIDTH}px; max-width: ${MEDIUM_WIDTH}px; height: ${MEDIUM_HEIGHT}px; min-height: ${MEDIUM_HEIGHT}px; max-height: ${MEDIUM_HEIGHT}px; border-radius: ${MEDIUM_HEIGHT / 2}px; padding: 0 ${PILL_INSET}px;`);
     const symbol = new St.Widget({
         layout_manager: new Clutter.BinLayout(),
         style_class: 'cc-symbol-disc',
@@ -68,15 +72,15 @@ function makeCircle(name, accessibleName) {
         style_class: `${SURFACE} cc-round-control`,
         accessible_name: accessibleName,
     });
-    button.set_size(CIRCLE, CIRCLE);
+    button.set_size(SMALL, SMALL);
     button.set_child(icon(name, 25));
     return button;
 }
 
 function makeFocusTile() {
     const tile = makeSurface('cc-focus-tile');
-    tile.set_size(GRID_UNIT, CIRCLE);
-    tile.set_style(`width: ${GRID_UNIT}px; min-width: ${GRID_UNIT}px; max-width: ${GRID_UNIT}px; height: ${CIRCLE}px; min-height: ${CIRCLE}px; max-height: ${CIRCLE}px; border-radius: ${CIRCLE / 2}px; padding: 0 ${PILL_INSET}px;`);
+    tile.set_size(MEDIUM_WIDTH, MEDIUM_HEIGHT);
+    tile.set_style(`width: ${MEDIUM_WIDTH}px; min-width: ${MEDIUM_WIDTH}px; max-width: ${MEDIUM_WIDTH}px; height: ${MEDIUM_HEIGHT}px; min-height: ${MEDIUM_HEIGHT}px; max-height: ${MEDIUM_HEIGHT}px; border-radius: ${MEDIUM_HEIGHT / 2}px; padding: 0 ${PILL_INSET}px;`);
     const symbol = new St.Widget({
         layout_manager: new Clutter.BinLayout(),
         style_class: 'cc-symbol-disc',
@@ -104,7 +108,7 @@ function makeFocusTile() {
 
 function makeMediaTile() {
     const tile = makeSurface('cc-media-tile', true);
-    tile.set_size(GRID_UNIT, GRID_UNIT);
+    tile.set_size(LARGE_WIDTH, LARGE_HEIGHT);
     tile.y_align = Clutter.ActorAlign.START;
 
     const artwork = new St.Widget({style_class: 'cc-artwork'});
