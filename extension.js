@@ -117,7 +117,8 @@ function makeCircle(name, accessibleName, onClick = null) {
         accessible_name: accessibleName,
     });
     button.set_size(SMALL, SMALL);
-    button.set_child(icon(name, 25));
+    button._ccIcon = icon(name, 25);
+    button.set_child(button._ccIcon);
     if (onClick)
         button.connect('clicked', onClick);
     return button;
@@ -207,7 +208,8 @@ function makeMediaTile(onPrevious, onPlayPause, onNext) {
             style_class: 'cc-media-control-button',
             accessible_name: accessibleName,
         });
-        button.set_child(icon(name, 16, 'cc-media-control-icon'));
+        button._ccIcon = icon(name, 16, 'cc-media-control-icon');
+        button.set_child(button._ccIcon);
         button.connect('clicked', callback);
         return button;
     };
@@ -297,7 +299,8 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
             style_class: 'cc-slider-icon-button',
             accessible_name: 'Toggle mute',
         });
-        trailingButton.set_child(icon(trailingIcon, 15, 'cc-slider-icon'));
+        trailingButton._ccIcon = icon(trailingIcon, 15, 'cc-slider-icon');
+        trailingButton.set_child(trailingButton._ccIcon);
         trailingButton.connect('clicked', trailingAction);
         tile._ccTrailingButton = trailingButton;
         controls.add_child(trailingButton);
@@ -310,6 +313,7 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
 
 export default class ControlCenterExtension extends Extension {
     enable() {
+        this._destroying = false;
         this._settings = this.getSettings();
         this._hideQuickSettingsSignal = this._settings.connect(
             'changed::hide-native-quick-settings',
@@ -474,7 +478,7 @@ export default class ControlCenterExtension extends Extension {
 
     _syncSystemState() {
         const state = this._systemState;
-        if (!state)
+        if (!state || this._destroying)
             return;
 
         if (this._wifiTile) {
@@ -487,8 +491,9 @@ export default class ControlCenterExtension extends Extension {
         }
 
         if (this._bluetoothButton) {
-            const glyph = this._bluetoothButton.get_child();
-            glyph.icon_name = state.bluetoothEnabled
+            const glyph = this._bluetoothButton._ccIcon;
+            if (glyph)
+                glyph.icon_name = state.bluetoothEnabled
                 ? 'bluetooth-active-symbolic' : 'bluetooth-disabled-symbolic';
             this._bluetoothButton.accessible_name = state.bluetoothAvailable
                 ? (state.bluetoothEnabled ? 'Bluetooth On' : 'Bluetooth Off')
@@ -498,8 +503,9 @@ export default class ControlCenterExtension extends Extension {
         }
 
         if (this._airplaneButton) {
-            const glyph = this._airplaneButton.get_child();
-            glyph.icon_name = state.airplaneEnabled
+            const glyph = this._airplaneButton._ccIcon;
+            if (glyph)
+                glyph.icon_name = state.airplaneEnabled
                 ? 'airplane-mode-symbolic' : 'network-wireless-signal-excellent-symbolic';
             this._airplaneButton.accessible_name = state.airplaneEnabled
                 ? 'Airplane Mode On' : 'Airplane Mode Off';
@@ -525,7 +531,7 @@ export default class ControlCenterExtension extends Extension {
             this._volumeTile._ccSetEnabled(state.audioAvailable);
             if (state.audioAvailable)
                 this._volumeTile._ccSetValue(state.volume);
-            const muteIcon = this._volumeTile._ccTrailingButton?.get_child();
+            const muteIcon = this._volumeTile._ccTrailingButton?._ccIcon;
             if (muteIcon)
                 muteIcon.icon_name = state.muted
                     ? 'audio-volume-muted-symbolic' : 'audio-volume-high-symbolic';
@@ -719,8 +725,9 @@ export default class ControlCenterExtension extends Extension {
             return;
 
         const active = this._caffeineSettings.get_boolean(CAFFEINE_TOGGLE_KEY);
-        const glyph = this._caffeineButton.get_child();
-        glyph.icon_name = active ? 'alarm-clock-symbolic' : 'timer-symbolic';
+        const glyph = this._caffeineButton._ccIcon;
+        if (glyph)
+            glyph.icon_name = active ? 'alarm-clock-symbolic' : 'timer-symbolic';
         this._caffeineButton.opacity = 255;
         setControlActive(this._caffeineButton, active);
         this._caffeineButton.accessible_name = active
@@ -778,9 +785,10 @@ export default class ControlCenterExtension extends Extension {
             return;
         this._mediaTile._ccTitleLabel.text = state.title;
         this._mediaTile._ccArtistLabel.text = state.artist;
-        const playIcon = this._mediaTile._ccPlayButton.get_child();
+        const playIcon = this._mediaTile._ccPlayButton._ccIcon;
         const playing = state.playbackStatus === 'Playing';
-        playIcon.icon_name = playing
+        if (playIcon)
+            playIcon.icon_name = playing
             ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
         this._mediaTile._ccPlayButton.accessible_name = playing ? 'Pause' : 'Play';
         const canTogglePlayback = state.canPlay || state.canPause;
@@ -793,6 +801,7 @@ export default class ControlCenterExtension extends Extension {
     }
 
     disable() {
+        this._destroying = true;
         if (this._settings && this._hideQuickSettingsSignal)
             this._settings.disconnect(this._hideQuickSettingsSignal);
         this._hideQuickSettingsSignal = 0;
