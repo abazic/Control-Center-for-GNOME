@@ -480,8 +480,10 @@ export default class ControlCenterExtension extends Extension {
         this._caffeineButton = makeCircle(
             'alarm-clock-symbolic', 'Caffeine Timer', () => this._openCaffeineMenu());
         this._syncCaffeineState();
+        this._powerModeButton = makeCircle(
+            'power-profile-balanced-symbolic', 'Power Mode', () => this._openPowerModeMenu());
 
-        for (const tile of [this._wifiTile, this._mediaTile, this._bluetoothButton,
+        for (const tile of [this._powerModeButton, this._wifiTile, this._mediaTile, this._bluetoothButton,
             this._airplaneButton, this._focusTile, this._mirrorButton, this._caffeineButton])
             grid.add_child(tile);
         content.add_child(grid);
@@ -503,23 +505,6 @@ export default class ControlCenterExtension extends Extension {
         outputButton.set_child(icon('pan-end-symbolic', 12, 'cc-slider-icon'));
         outputButton.connect('clicked', () => this._openSoundMenu());
         this._volumeTile._ccHeading.add_child(outputButton);
-
-        const shortcuts = new St.BoxLayout({
-            style_class: 'cc-shortcuts',
-            x_expand: true,
-        });
-        this._powerModeButton = makeCircle(
-            'power-profile-balanced-symbolic', 'Power Mode', () => this._openPowerModeMenu());
-        for (const button of [
-            this._powerModeButton,
-            makeCircle('accessories-calculator-symbolic', 'Calculator'),
-            makeCircle('preferences-system-time-symbolic', 'Timer'),
-            makeCircle('camera-photo-symbolic', 'Screenshot'),
-        ]) {
-            styleTile(button, 'small');
-            shortcuts.add_child(button);
-        }
-        content.add_child(shortcuts);
 
         const editControlRow = new St.BoxLayout({
             x_expand: true,
@@ -701,7 +686,8 @@ export default class ControlCenterExtension extends Extension {
             }
             return {actor, size};
         });
-        for (const {actor} of this._extraTiles ?? []) {
+        const power = {actor: this._powerModeButton};
+        for (const {actor} of [power, ...(this._extraTiles ?? [])]) {
             styleTile(actor, 'small');
             tiles.push({actor, size: 'small'});
         }
