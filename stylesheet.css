@@ -15,17 +15,17 @@
 }
 
 .cc-content {
-    width: 430px;
-    padding: 12px;
-    spacing: 12px;
+    width: 350px;
+    padding: 10px;
+    spacing: 9px;
 }
 
 .cc-main-grid {
-    spacing: 12px;
+    spacing: 9px;
 }
 
 .cc-left-column {
-    spacing: 12px;
+    spacing: 9px;
 }
 
 .cc-surface {
@@ -42,43 +42,43 @@
 
 .cc-wifi-tile,
 .cc-focus-tile {
-    min-height: 76px;
-    padding: 12px;
-    border-radius: 38px;
-    spacing: 12px;
+    min-height: 64px;
+    padding: 9px 11px;
+    border-radius: 32px;
+    spacing: 9px;
 }
 
 .cc-symbol-disc {
-    width: 48px;
-    height: 48px;
-    border-radius: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
     background-color: rgba(255, 255, 255, 0.18);
-    padding: 11px;
+    padding: 9px;
 }
 
 .cc-copy {
-    spacing: 3px;
+    spacing: 2px;
 }
 
 .cc-title {
     color: #ffffff;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
 }
 
 .cc-subtitle {
     color: rgba(235, 255, 255, 0.88);
-    font-size: 11px;
+    font-size: 10px;
 }
 
 .cc-circle-row {
-    spacing: 12px;
+    spacing: 9px;
 }
 
 .cc-round-control {
-    width: 76px;
-    height: 76px;
-    border-radius: 38px;
+    width: 58px;
+    height: 58px;
+    border-radius: 29px;
     padding: 0;
     background-color: rgba(0, 170, 205, 0.54);
     border: 1px solid rgba(160, 245, 255, 0.52);
@@ -94,19 +94,19 @@
 }
 
 .cc-media-tile {
-    width: 184px;
-    min-height: 244px;
-    padding: 16px;
-    border-radius: 38px;
-    spacing: 12px;
+    width: 150px;
+    min-height: 204px;
+    padding: 13px;
+    border-radius: 30px;
+    spacing: 9px;
 }
 
 .cc-artwork {
-    width: 62px;
-    height: 62px;
-    border-radius: 17px;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
     background-color: rgba(255, 255, 255, 0.20);
-    padding: 16px;
+    padding: 12px;
 }
 
 .cc-artwork-icon {
@@ -114,18 +114,18 @@
 }
 
 .cc-media-copy {
-    spacing: 4px;
+    spacing: 3px;
 }
 
 .cc-media-title {
     color: #ffffff;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
 }
 
 .cc-media-controls {
-    spacing: 25px;
-    padding-top: 8px;
+    spacing: 19px;
+    padding-top: 5px;
 }
 
 .cc-media-control-icon {
@@ -133,31 +133,31 @@
 }
 
 .cc-slider-tile {
-    min-height: 78px;
-    padding: 13px 18px;
-    border-radius: 28px;
-    spacing: 10px;
+    min-height: 64px;
+    padding: 10px 14px;
+    border-radius: 23px;
+    spacing: 7px;
 }
 
 .cc-slider-title {
     color: #ffffff;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
 }
 
 .cc-slider-controls {
-    spacing: 10px;
+    spacing: 8px;
 }
 
 .cc-slider-track {
-    height: 7px;
-    border-radius: 4px;
+    height: 6px;
+    border-radius: 3px;
     background-color: rgba(255, 255, 255, 0.30);
 }
 
 .cc-slider-fill {
-    height: 7px;
-    border-radius: 4px;
+    height: 6px;
+    border-radius: 3px;
     background-color: #ffffff;
 }
 
@@ -170,11 +170,11 @@
 }
 
 .cc-shortcuts {
-    spacing: 12px;
+    spacing: 9px;
 }
 
 .cc-shortcuts .cc-round-control {
-    width: 76px;
-    height: 76px;
-    border-radius: 38px;
+    width: 58px;
+    height: 58px;
+    border-radius: 29px;
 }
