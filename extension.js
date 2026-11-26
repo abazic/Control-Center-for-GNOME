@@ -230,6 +230,25 @@ export default class ControlCenterExtension extends Extension {
             shortcuts.add_child(makeCircle(name, accessibleName));
         content.add_child(shortcuts);
 
+        const editControlRow = new St.BoxLayout({
+            x_expand: true,
+            style_class: 'cc-edit-control-row',
+        });
+        const editControlButton = new St.Button({
+            reactive: false,
+            can_focus: false,
+            track_hover: false,
+            style_class: 'cc-edit-control-button',
+            accessible_name: 'Edit Control',
+        });
+        editControlButton.set_size(86, 21);
+        editControlButton.set_child(new St.Label({
+            text: 'Edit Control',
+            style_class: 'cc-edit-control-label',
+        }));
+        editControlRow.add_child(editControlButton);
+        content.add_child(editControlRow);
+
         item.add_child(content);
         this._indicator.menu.addMenuItem(item);
     }
