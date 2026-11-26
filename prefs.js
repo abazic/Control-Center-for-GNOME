@@ -13,28 +13,31 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             icon_name: 'preferences-system-symbolic',
         });
 
-        const appearanceGroup = new Adw.PreferencesGroup({
-            title: 'Control size',
-            description: 'Choose the default tile size used by the Control Center layout.',
-        });
-
-        const sizeModel = Gtk.StringList.new(['Small', 'Medium', 'Large']);
-        const sizeRow = new Adw.ComboRow({
-            title: 'Button size',
-            subtitle: 'Small is the default size (60 × 60 px). Medium uses 130 × 60 px pills; Large uses 130 × 130 px squares.',
-            model: sizeModel,
-        });
-
         const settings = this.getSettings();
         const sizeValues = ['small', 'medium', 'large'];
-        const currentSize = settings.get_string('quick-settings-size');
-        sizeRow.selected = Math.max(0, sizeValues.indexOf(currentSize));
-        sizeRow.connect('notify::selected', () => {
-            const selected = sizeValues[sizeRow.selected] ?? 'small';
-            settings.set_string('quick-settings-size', selected);
+        const sizeModel = Gtk.StringList.new(['Small', 'Medium', 'Large']);
+        const appearanceGroup = new Adw.PreferencesGroup({
+            title: 'Tile sizes',
+            description: 'Set the size of each Control Center tile independently. Small: 60 × 60 px; Medium: 130 × 60 px; Large: 130 × 130 px.',
         });
 
-        appearanceGroup.add(sizeRow);
+        for (const [key, title] of [
+            ['wifi-tile-size', 'Wi-Fi'],
+            ['bluetooth-tile-size', 'Bluetooth'],
+            ['airplane-tile-size', 'Airplane Mode'],
+            ['focus-tile-size', 'Focus / Do Not Disturb'],
+            ['media-tile-size', 'Media Player'],
+            ['mirror-tile-size', 'Mirror'],
+            ['caffeine-tile-size', 'Caffeine'],
+        ]) {
+            const row = new Adw.ComboRow({title, model: sizeModel});
+            const current = settings.get_string(key);
+            row.selected = Math.max(0, sizeValues.indexOf(current));
+            row.connect('notify::selected', () => {
+                settings.set_string(key, sizeValues[row.selected] ?? 'small');
+            });
+            appearanceGroup.add(row);
+        }
         page.add(appearanceGroup);
 
         const integrationGroup = new Adw.PreferencesGroup({
