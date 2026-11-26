@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import St from 'gi://St';
+import {SystemController} from './system.js';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -36,8 +37,16 @@ function makeSurface(styleClass, vertical = false) {
     });
 }
 
-function makeWifiTile() {
+function makeWifiTile(onClick = null) {
     const tile = makeSurface('cc-wifi-tile');
+    tile.reactive = Boolean(onClick);
+    tile.can_focus = Boolean(onClick);
+    if (onClick) {
+        tile.connect('button-press-event', () => {
+            onClick();
+            return Clutter.EVENT_STOP;
+        });
+    }
     tile.set_size(MEDIUM_WIDTH, MEDIUM_HEIGHT);
     tile.set_style(`width: ${MEDIUM_WIDTH}px; min-width: ${MEDIUM_WIDTH}px; max-width: ${MEDIUM_WIDTH}px; height: ${MEDIUM_HEIGHT}px; min-height: ${MEDIUM_HEIGHT}px; max-height: ${MEDIUM_HEIGHT}px; border-radius: ${MEDIUM_HEIGHT / 2}px; padding: 0 ${PILL_INSET}px;`);
     const symbol = new St.Widget({
@@ -58,28 +67,42 @@ function makeWifiTile() {
         x_expand: true,
         style_class: 'cc-copy',
     });
-    copy.add_child(label('Wi-Fi', 'cc-title'));
-    copy.add_child(label('Connected', 'cc-subtitle'));
+    const title = label('Wi-Fi', 'cc-title');
+    const status = label('Connected', 'cc-subtitle');
+    copy.add_child(title);
+    copy.add_child(status);
+    tile._ccIcon = symbolIcon;
+    tile._ccStatusLabel = status;
     tile.add_child(symbol);
     tile.add_child(copy);
     return tile;
 }
 
-function makeCircle(name, accessibleName) {
+function makeCircle(name, accessibleName, onClick = null) {
     const button = new St.Button({
-        reactive: false,
-        can_focus: false,
-        track_hover: false,
+        reactive: Boolean(onClick),
+        can_focus: Boolean(onClick),
+        track_hover: Boolean(onClick),
         style_class: `${SURFACE} cc-round-control`,
         accessible_name: accessibleName,
     });
     button.set_size(SMALL, SMALL);
     button.set_child(icon(name, 25));
+    if (onClick)
+        button.connect('clicked', onClick);
     return button;
 }
 
-function makeFocusTile() {
+function makeFocusTile(onClick = null) {
     const tile = makeSurface('cc-focus-tile');
+    tile.reactive = Boolean(onClick);
+    tile.can_focus = Boolean(onClick);
+    if (onClick) {
+        tile.connect('button-press-event', () => {
+            onClick();
+            return Clutter.EVENT_STOP;
+        });
+    }
     tile.set_size(MEDIUM_WIDTH, MEDIUM_HEIGHT);
     tile.set_style(`width: ${MEDIUM_WIDTH}px; min-width: ${MEDIUM_WIDTH}px; max-width: ${MEDIUM_WIDTH}px; height: ${MEDIUM_HEIGHT}px; min-height: ${MEDIUM_HEIGHT}px; max-height: ${MEDIUM_HEIGHT}px; border-radius: ${MEDIUM_HEIGHT / 2}px; padding: 0 ${PILL_INSET}px;`);
     const symbol = new St.Widget({
@@ -101,7 +124,10 @@ function makeFocusTile() {
         style_class: 'cc-copy',
     });
     copy.add_child(label('Focus', 'cc-title'));
-    copy.add_child(label('Do Not Disturb', 'cc-subtitle'));
+    const status = label('Do Not Disturb', 'cc-subtitle');
+    copy.add_child(status);
+    tile._ccIcon = symbolIcon;
+    tile._ccStatusLabel = status;
     tile.add_child(symbol);
     tile.add_child(copy);
     return tile;
@@ -149,7 +175,7 @@ function makeMediaTile() {
     return tile;
 }
 
-function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
+function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChanged = null, initialValue = 0.72) {
     const tile = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         x_expand: true,
@@ -166,7 +192,28 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
     });
     controls.add_child(icon(leadingIcon, 15, 'cc-slider-icon'));
     const track = new St.Widget({x_expand: true, style_class: 'cc-slider-track'});
-    track.add_child(new St.Widget({style_class: `cc-slider-fill ${fillClass}`}));
+    const fill = new St.Widget({style_class: `cc-slider-fill ${fillClass}`});
+    track.add_child(fill);
+    const setValue = value => {
+        const normalized = Math.max(0, Math.min(1, value));
+        fill.set_style(`width: ${normalized * 100}%;`);
+        if (onValueChanged)
+            onValueChanged(normalized);
+    };
+    if (onValueChanged) {
+        track.reactive = true;
+        track.can_focus = true;
+        track.connect('button-press-event', (actor, event) => {
+            const [stageX] = event.get_coords();
+            const [trackX] = track.get_transformed_position();
+            const width = track.get_width();
+            if (width > 0)
+                setValue((stageX - trackX) / width);
+            return Clutter.EVENT_STOP;
+        });
+    }
+    fill.set_style(`width: ${initialValue * 100}%;`);
+    tile._ccSetValue = value => fill.set_style(`width: ${Math.max(0, Math.min(1, value)) * 100}%;`);
     controls.add_child(track);
     controls.add_child(icon(trailingIcon, 15, 'cc-slider-icon'));
     tile.add_child(controls);
@@ -175,6 +222,10 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
 
 export default class ControlCenterExtension extends Extension {
     enable() {
+        this._controller = new SystemController(state => {
+            this._systemState = state;
+            this._syncSystemState();
+        });
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
         this._indicator.add_child(new St.Icon({
             gicon: new Gio.FileIcon({file: this.dir.get_child('control-center-symbolic.svg')}),
@@ -206,13 +257,17 @@ export default class ControlCenterExtension extends Extension {
             style_class: 'cc-left-column',
             x_expand: false,
         });
-        left.add_child(makeWifiTile());
+        this._wifiTile = makeWifiTile(() => this._controller.toggleWifi());
+        left.add_child(this._wifiTile);
 
         const connectivity = new St.BoxLayout({style_class: 'cc-circle-row'});
-        connectivity.add_child(makeCircle('bluetooth-active-symbolic', 'Bluetooth'));
+        this._bluetoothButton = makeCircle(
+            'bluetooth-active-symbolic', 'Bluetooth', () => this._controller.toggleBluetooth());
+        connectivity.add_child(this._bluetoothButton);
         connectivity.add_child(makeCircle('radio-symbolic', 'Nearby devices'));
         left.add_child(connectivity);
-        left.add_child(makeFocusTile());
+        this._focusTile = makeFocusTile(() => this._controller.toggleFocus());
+        left.add_child(this._focusTile);
 
         composition.add_child(left);
 
@@ -234,8 +289,10 @@ export default class ControlCenterExtension extends Extension {
 
         content.add_child(makeSliderTile(
             'Display', 'display-brightness-symbolic', 'weather-clear-symbolic', 'cc-brightness-fill'));
-        content.add_child(makeSliderTile(
-            'Sound', 'audio-volume-low-symbolic', 'audio-volume-high-symbolic', 'cc-volume-fill'));
+        this._volumeTile = makeSliderTile(
+            'Sound', 'audio-volume-low-symbolic', 'audio-volume-high-symbolic', 'cc-volume-fill',
+            value => this._controller.setVolume(value), 0.72);
+        content.add_child(this._volumeTile);
 
         const shortcuts = new St.BoxLayout({
             style_class: 'cc-shortcuts',
@@ -275,9 +332,45 @@ export default class ControlCenterExtension extends Extension {
 
         item.add_child(content);
         this._indicator.menu.addMenuItem(item);
+        this._syncSystemState();
+    }
+
+    _syncSystemState() {
+        const state = this._systemState;
+        if (!state)
+            return;
+
+        if (this._wifiTile) {
+            this._wifiTile._ccStatusLabel.text = state.wifiAvailable
+                ? (state.wifiEnabled ? 'On' : 'Off') : 'Unavailable';
+            this._wifiTile._ccIcon.icon_name = state.wifiEnabled
+                ? 'network-wireless-signal-excellent-symbolic'
+                : 'network-wireless-offline-symbolic';
+        }
+
+        if (this._bluetoothButton) {
+            const glyph = this._bluetoothButton.get_child();
+            glyph.icon_name = state.bluetoothEnabled
+                ? 'bluetooth-active-symbolic' : 'bluetooth-disabled-symbolic';
+            this._bluetoothButton.accessible_name = state.bluetoothAvailable
+                ? (state.bluetoothEnabled ? 'Bluetooth On' : 'Bluetooth Off')
+                : 'Bluetooth unavailable';
+        }
+
+        if (this._focusTile) {
+            this._focusTile._ccStatusLabel.text = state.focusEnabled
+                ? 'On' : 'Do Not Disturb';
+            this._focusTile._ccIcon.icon_name = state.focusEnabled
+                ? 'weather-clear-night-symbolic' : 'notifications-symbolic';
+        }
+
+        if (this._volumeTile && state.audioAvailable)
+            this._volumeTile._ccSetValue(state.volume);
     }
 
     disable() {
+        this._controller?.destroy();
+        this._controller = null;
         this._indicator?.destroy();
         this._indicator = null;
     }
