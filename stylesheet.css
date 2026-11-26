@@ -390,12 +390,42 @@
 .cc-tile-size-large .cc-copy { opacity: 1; width: auto; max-width: 120px; }
 .cc-round-control.cc-tile-size-medium { border-radius: 30px; }
 .cc-round-control.cc-tile-size-large { border-radius: 29px; }
-.cc-wifi-tile.cc-tile-size-medium,
-.cc-focus-tile.cc-tile-size-medium { padding: 0 6px; spacing: 5px; }
-.cc-wifi-tile.cc-tile-size-large,
-.cc-focus-tile.cc-tile-size-large { padding: 12px; spacing: 8px; border-radius: 29px; }
 .cc-wifi-tile.cc-tile-size-small,
-.cc-focus-tile.cc-tile-size-small { padding: 0; spacing: 0; justify-content: center; }
+.cc-focus-tile.cc-tile-size-small {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+    padding: 0;
+    spacing: 0;
+    border-radius: 30px;
+}
+.cc-wifi-tile.cc-tile-size-medium,
+.cc-focus-tile.cc-tile-size-medium {
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+    padding: 0 6px;
+    spacing: 5px;
+    border-radius: 30px;
+}
+.cc-wifi-tile.cc-tile-size-large,
+.cc-focus-tile.cc-tile-size-large {
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    height: 130px;
+    min-height: 130px;
+    max-height: 130px;
+    padding: 12px;
+    spacing: 8px;
+    border-radius: 29px;
+}
 .cc-wifi-tile.cc-tile-size-small .cc-copy,
 .cc-focus-tile.cc-tile-size-small .cc-copy { opacity: 0; width: 0; max-width: 0; }
 .cc-wifi-tile.cc-tile-size-large .cc-copy,
