@@ -9,7 +9,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 const CIRCLE = 60;
 const SPACING = 10;
 const GRID_UNIT = (2 * CIRCLE) + SPACING;
-const PILL_INSET = 6;
+const PILL_INSET = 13;
 const SYMBOL_SIZE = 33;
 const SYMBOL_ICON_SIZE = 17;
 const SURFACE = 'cc-surface bms-popup-blur-target';
