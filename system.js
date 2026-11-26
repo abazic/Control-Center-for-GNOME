@@ -360,7 +360,7 @@ export class SystemController {
             return;
 
         const normalized = Math.max(0, Math.min(1, value));
-        this._sink.set_volume(normalized * this._mixer.get_vol_max_norm());
+        this._sink.volume = normalized * this._mixer.get_vol_max_norm();
         this._sink.push_volume();
     }
 
