@@ -203,12 +203,21 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
     if (onValueChanged) {
         track.reactive = true;
         track.can_focus = true;
-        track.connect('button-press-event', (actor, event) => {
+        const updateFromEvent = event => {
             const [stageX] = event.get_coords();
             const [trackX] = track.get_transformed_position();
             const width = track.get_width();
             if (width > 0)
                 setValue((stageX - trackX) / width);
+        };
+        track.connect('button-press-event', (actor, event) => {
+            updateFromEvent(event);
+            return Clutter.EVENT_STOP;
+        });
+        track.connect('motion-event', (actor, event) => {
+            if ((event.get_state() & Clutter.ModifierType.BUTTON1_MASK) === 0)
+                return Clutter.EVENT_PROPAGATE;
+            updateFromEvent(event);
             return Clutter.EVENT_STOP;
         });
     }
@@ -287,8 +296,10 @@ export default class ControlCenterExtension extends Extension {
         composition.add_child(mediaColumn);
         content.add_child(composition);
 
-        content.add_child(makeSliderTile(
-            'Display', 'display-brightness-symbolic', 'weather-clear-symbolic', 'cc-brightness-fill'));
+        this._brightnessTile = makeSliderTile(
+            'Display', 'display-brightness-symbolic', 'weather-clear-symbolic', 'cc-brightness-fill',
+            value => this._controller.setBrightness(value), 0.65);
+        content.add_child(this._brightnessTile);
         this._volumeTile = makeSliderTile(
             'Sound', 'audio-volume-low-symbolic', 'audio-volume-high-symbolic', 'cc-volume-fill',
             value => this._controller.setVolume(value), 0.72);
@@ -363,6 +374,9 @@ export default class ControlCenterExtension extends Extension {
             this._focusTile._ccIcon.icon_name = state.focusEnabled
                 ? 'weather-clear-night-symbolic' : 'notifications-symbolic';
         }
+
+        if (this._brightnessTile && state.brightnessAvailable)
+            this._brightnessTile._ccSetValue(state.brightness);
 
         if (this._volumeTile && state.audioAvailable)
             this._volumeTile._ccSetValue(state.volume);
