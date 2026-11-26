@@ -400,3 +400,68 @@
 .cc-focus-tile.cc-tile-size-small .cc-copy { opacity: 0; width: 0; max-width: 0; }
 .cc-wifi-tile.cc-tile-size-large .cc-copy,
 .cc-focus-tile.cc-tile-size-large .cc-copy { opacity: 1; width: 100%; }
+
+
+/* Medium control tiles share the Wi-Fi pill anatomy: 33px symbol disc,
+ * 17px glyph, and a visible control name. Small remains icon-only.
+ */
+.cc-round-control {
+    padding: 0 13px;
+}
+.cc-control-content {
+    spacing: 8px;
+}
+.cc-control-symbol {
+    width: 33px;
+    height: 33px;
+    min-width: 33px;
+    min-height: 33px;
+    max-width: 33px;
+    max-height: 33px;
+    border-radius: 29px;
+    background-color: rgba(255, 255, 255, 0.18);
+}
+.cc-control-symbol .cc-icon {
+    color: #ffffff;
+}
+.cc-control-label {
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+}
+.cc-round-control.cc-tile-size-small {
+    padding: 0;
+}
+.cc-round-control.cc-tile-size-small .cc-control-content {
+    spacing: 0;
+    justify-content: center;
+}
+.cc-round-control.cc-tile-size-small .cc-control-label {
+    width: 0;
+    max-width: 0;
+    opacity: 0;
+}
+.cc-round-control.cc-tile-size-medium {
+    padding: 0 13px;
+    border-radius: 30px;
+}
+.cc-round-control.cc-tile-size-medium .cc-control-label,
+.cc-round-control.cc-tile-size-large .cc-control-label {
+    width: auto;
+    max-width: 85px;
+    opacity: 1;
+}
+.cc-round-control.cc-tile-size-large {
+    padding: 12px;
+    border-radius: 29px;
+}
+.cc-round-control.cc-tile-size-large .cc-control-content {
+    flex-direction: column;
+    spacing: 8px;
+}
+.cc-control-active .cc-control-symbol {
+    background-color: rgba(0, 127, 145, 0.10);
+}
+.cc-control-active .cc-control-symbol .cc-icon {
+    color: #007f91;
+}
