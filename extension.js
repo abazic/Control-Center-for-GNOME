@@ -78,7 +78,7 @@ function makeFocusTile() {
 function makeMediaTile() {
     const tile = makeSurface('cc-media-tile', true);
     tile.set_size(GRID_UNIT, GRID_UNIT);
-    tile.y_align = Clutter.ActorAlign.CENTER;
+    tile.y_align = Clutter.ActorAlign.START;
 
     const artwork = new St.Widget({style_class: 'cc-artwork'});
     artwork.set_size(34, 34);
