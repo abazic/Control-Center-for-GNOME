@@ -195,7 +195,21 @@ export default class ControlCenterExtension extends Extension {
         left.add_child(makeFocusTile());
 
         composition.add_child(left);
-        composition.add_child(makeMediaTile());
+
+        const mediaColumn = new St.BoxLayout({
+            orientation: Clutter.Orientation.VERTICAL,
+            style_class: 'cc-media-column',
+        });
+        mediaColumn.add_child(makeMediaTile());
+
+        const mediaActions = new St.BoxLayout({
+            style_class: 'cc-media-actions',
+        });
+        mediaActions.add_child(makeCircle('video-display-symbolic', 'Mirror'));
+        mediaActions.add_child(makeCircle('power-profile-performance-symbolic', 'Power Mode'));
+        mediaColumn.add_child(mediaActions);
+
+        composition.add_child(mediaColumn);
         content.add_child(composition);
 
         content.add_child(makeSliderTile(
