@@ -44,7 +44,10 @@ function makeWifiTile() {
     });
     symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
     symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
-    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', SYMBOL_ICON_SIZE));
+    const symbolIcon = icon('network-wireless-signal-excellent-symbolic', SYMBOL_ICON_SIZE);
+    symbolIcon.x_align = Clutter.ActorAlign.CENTER;
+    symbolIcon.y_align = Clutter.ActorAlign.CENTER;
+    symbol.add_child(symbolIcon);
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -82,7 +85,10 @@ function makeFocusTile() {
     });
     symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
     symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
-    symbol.add_child(icon('weather-clear-night-symbolic', SYMBOL_ICON_SIZE));
+    const symbolIcon = icon('weather-clear-night-symbolic', SYMBOL_ICON_SIZE);
+    symbolIcon.x_align = Clutter.ActorAlign.CENTER;
+    symbolIcon.y_align = Clutter.ActorAlign.CENTER;
+    symbol.add_child(symbolIcon);
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
