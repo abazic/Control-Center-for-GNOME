@@ -450,8 +450,9 @@ export default class ControlCenterExtension extends Extension {
         playIcon.icon_name = playing
             ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
         this._mediaTile._ccPlayButton.accessible_name = playing ? 'Pause' : 'Play';
-        this._mediaTile._ccPlayButton.reactive = state.canPlay;
-        this._mediaTile._ccPlayButton.opacity = state.canPlay ? 255 : 110;
+        const canTogglePlayback = state.canPlay || state.canPause;
+        this._mediaTile._ccPlayButton.reactive = canTogglePlayback;
+        this._mediaTile._ccPlayButton.opacity = canTogglePlayback ? 255 : 110;
         this._mediaTile._ccPreviousButton.reactive = state.canGoPrevious;
         this._mediaTile._ccPreviousButton.opacity = state.canGoPrevious ? 255 : 110;
         this._mediaTile._ccNextButton.reactive = state.canGoNext;
