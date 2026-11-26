@@ -280,6 +280,10 @@ export default class ControlCenterExtension extends Extension {
             'changed::quick-settings-size',
             () => this._syncQuickSettingsSize()
         );
+        this._hideQuickSettingsSignal = this._settings.connect(
+            'changed::hide-native-quick-settings',
+            () => this._syncNativeQuickSettingsVisibility()
+        );
         this._initCaffeineIntegration();
         this._mediaController = new MediaController(state => {
             this._mediaState = state;
@@ -471,6 +475,10 @@ export default class ControlCenterExtension extends Extension {
     }
 
     _queueQuickSettingsIntegration() {
+        if (!this._settings?.get_boolean('hide-native-quick-settings')) {
+            this._syncNativeQuickSettingsVisibility();
+            return;
+        }
         if (this._quickSettingsSource)
             return;
 
@@ -496,7 +504,10 @@ export default class ControlCenterExtension extends Extension {
                 }
 
                 this._nativeQuickSettings = quickSettings;
-                container.hide();
+                if (this._settings?.get_boolean('hide-native-quick-settings'))
+                    container.hide();
+                else
+                    container.show();
                 this._quickSettingsSource = 0;
                 return GLib.SOURCE_REMOVE;
             }
@@ -514,6 +525,19 @@ export default class ControlCenterExtension extends Extension {
         const supportedSize = ['small', 'medium', 'large'].includes(size)
             ? size : 'small';
         this._content.add_style_class_name(`cc-size-${supportedSize}`);
+    }
+
+    _syncNativeQuickSettingsVisibility() {
+        const quickSettings = Main.panel.statusArea.quickSettings;
+        const container = quickSettings?.container;
+        if (!container)
+            return;
+
+        this._nativeQuickSettings = quickSettings;
+        if (this._settings?.get_boolean('hide-native-quick-settings'))
+            container.hide();
+        else
+            container.show();
     }
 
     _restoreNativeQuickSettings() {
@@ -629,7 +653,10 @@ export default class ControlCenterExtension extends Extension {
     disable() {
         if (this._settings && this._quickSettingsSizeSignal)
             this._settings.disconnect(this._quickSettingsSizeSignal);
+        if (this._settings && this._hideQuickSettingsSignal)
+            this._settings.disconnect(this._hideQuickSettingsSignal);
         this._quickSettingsSizeSignal = 0;
+        this._hideQuickSettingsSignal = 0;
         this._settings = null;
         this._restoreNativeQuickSettings();
         this._settings = null;
