@@ -276,10 +276,6 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
 export default class ControlCenterExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
-        this._quickSettingsSizeSignal = this._settings.connect(
-            'changed::quick-settings-size',
-            () => this._syncQuickSettingsSize()
-        );
         this._initCaffeineIntegration();
         this._mediaController = new MediaController(state => {
             this._mediaState = state;
@@ -473,6 +469,9 @@ export default class ControlCenterExtension extends Extension {
         if (this._quickSettingsSource)
             return;
 
+        // Control Center is the replacement UI. Keep GNOME's native Quick
+        // Settings indicator hidden, but leave its actors and system services
+        // untouched so all state remains owned by GNOME.
         let attempts = 0;
         this._quickSettingsSource = GLib.timeout_add_seconds(
             GLib.PRIORITY_DEFAULT,
@@ -480,62 +479,22 @@ export default class ControlCenterExtension extends Extension {
             () => {
                 attempts++;
                 const quickSettings = Main.panel.statusArea.quickSettings;
-                const grid = quickSettings?.menu?._grid;
+                const container = quickSettings?.container;
 
-                if (!grid || !this._content) {
+                if (!container) {
                     if (attempts >= 20) {
                         this._quickSettingsSource = 0;
-                        log('Control Center: native Quick Settings grid was not available');
-                        return GLib.SOURCE_REMOVE;
-                    }
-                    return GLib.SOURCE_CONTINUE;
-                }
-
-                const parent = grid.get_parent();
-                if (!parent) {
-                    if (attempts >= 20) {
-                        this._quickSettingsSource = 0;
+                        log('Control Center: native Quick Settings indicator was not available');
                         return GLib.SOURCE_REMOVE;
                     }
                     return GLib.SOURCE_CONTINUE;
                 }
 
                 this._nativeQuickSettings = quickSettings;
-                this._quickSettingsGrid = grid;
-                this._quickSettingsParent = parent;
-                this._quickSettingsIndex = parent.get_children().indexOf(grid);
-
-                parent.remove_child(grid);
-                grid.add_style_class_name('cc-native-quick-settings');
-                this._syncQuickSettingsSize();
-
-                const insertIndex = Math.max(
-                    0,
-                    this._content.get_children().length - (this._editControlRow ? 1 : 0)
-                );
-                this._content.insert_child_at_index(grid, insertIndex);
-
-                // The original indicator is hidden only after its live grid is
-                // successfully hosted by Control Center.
-                quickSettings.container.hide();
+                container.hide();
                 this._quickSettingsSource = 0;
                 return GLib.SOURCE_REMOVE;
             }
-        );
-    }
-
-    _syncQuickSettingsSize() {
-        if (!this._quickSettingsGrid || !this._settings)
-            return;
-
-        for (const size of ['small', 'medium', 'large'])
-            this._quickSettingsGrid.remove_style_class_name(`quick-settings-size-${size}`);
-
-        const size = this._settings.get_string('quick-settings-size');
-        const supportedSize = ['small', 'medium', 'large'].includes(size)
-            ? size : 'small';
-        this._quickSettingsGrid.add_style_class_name(
-            `quick-settings-size-${supportedSize}`
         );
     }
 
@@ -545,30 +504,7 @@ export default class ControlCenterExtension extends Extension {
             this._quickSettingsSource = 0;
         }
 
-        const grid = this._quickSettingsGrid;
-        const parent = this._quickSettingsParent;
-        if (grid && parent) {
-            const currentParent = grid.get_parent();
-            if (currentParent)
-                currentParent.remove_child(grid);
-
-            try {
-                parent.insert_child_at_index(
-                    grid,
-                    Math.max(0, this._quickSettingsIndex)
-                );
-            } catch (error) {
-                logError(error, 'Unable to restore the original Quick Settings grid');
-            }
-            grid.remove_style_class_name('cc-native-quick-settings');
-            for (const size of ['small', 'medium', 'large'])
-                grid.remove_style_class_name(`quick-settings-size-${size}`);
-        }
-
         this._nativeQuickSettings?.container?.show();
-        this._quickSettingsGrid = null;
-        this._quickSettingsParent = null;
-        this._quickSettingsIndex = -1;
         this._nativeQuickSettings = null;
     }
 
@@ -674,9 +610,6 @@ export default class ControlCenterExtension extends Extension {
 
     disable() {
         this._restoreNativeQuickSettings();
-        if (this._settings && this._quickSettingsSizeSignal)
-            this._settings.disconnect(this._quickSettingsSizeSignal);
-        this._quickSettingsSizeSignal = 0;
         this._settings = null;
         this._content = null;
         this._editControlRow = null;
