@@ -164,11 +164,11 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-slider-controls',
     });
-    controls.add_child(icon(leadingIcon, 17));
+    controls.add_child(icon(leadingIcon, 15, 'cc-slider-icon'));
     const track = new St.Widget({x_expand: true, style_class: 'cc-slider-track'});
     track.add_child(new St.Widget({style_class: `cc-slider-fill ${fillClass}`}));
     controls.add_child(track);
-    controls.add_child(icon(trailingIcon, 17));
+    controls.add_child(icon(trailingIcon, 15, 'cc-slider-icon'));
     tile.add_child(controls);
     return tile;
 }
