@@ -236,9 +236,10 @@ export default class ControlCenterExtension extends Extension {
 
         const editControlRow = new St.BoxLayout({
             x_expand: true,
-            x_align: Clutter.ActorAlign.CENTER,
             style_class: 'cc-edit-control-row',
         });
+        const editControlLeftSpacer = new St.Widget({x_expand: true});
+        const editControlRightSpacer = new St.Widget({x_expand: true});
         const editControlButton = new St.Button({
             reactive: false,
             can_focus: false,
@@ -251,7 +252,9 @@ export default class ControlCenterExtension extends Extension {
             text: 'Edit Control',
             style_class: 'cc-edit-control-label',
         }));
+        editControlRow.add_child(editControlLeftSpacer);
         editControlRow.add_child(editControlButton);
+        editControlRow.add_child(editControlRightSpacer);
         content.add_child(editControlRow);
 
         item.add_child(content);
