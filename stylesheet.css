@@ -350,21 +350,6 @@
 }
 
 
-/* Highlight the panel button while the custom Control Center popup is open. */
-.cc-indicator.cc-active {
-    background-color: rgba(255, 255, 255, 0.20);
-    border-radius: 8px;
-}
-
-.cc-indicator.cc-active .system-status-icon {
-    color: #ffffff;
-}
-
-
-
-
-
-
 /* Individual tile size presets: each tile is independently configurable. */
 .cc-tile-size-small .cc-copy { opacity: 0; width: 0; max-width: 0; }
 .cc-tile-size-medium .cc-copy,
@@ -527,4 +512,12 @@
 
 .cc-surface.cc-control-active .cc-symbol-disc .cc-icon {
     color: #0a7aff;
+}
+
+/* Tombol panel tidak menyala saat diklik atau saat popup terbuka. */
+#panel .panel-button.cc-indicator:active,
+#panel .panel-button.cc-indicator:checked,
+#panel .panel-button.cc-indicator:focus {
+    background-color: transparent !important;
+    box-shadow: none !important;
 }
