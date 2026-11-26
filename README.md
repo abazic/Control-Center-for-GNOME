@@ -56,6 +56,7 @@ The metadata allows GNOME Shell 45–51. The primary development target is **GNO
 
 - When **Hide Quick Settings bawaan** is enabled, the normal native panel entry point is hidden while the extension is active. This does not yet guarantee that every GNOME keyboard shortcut or other Shell entry point that opens native Quick Settings is intercepted.
 - Native Quick Settings tiles supplied by unrelated third-party extensions are not automatically imported into this custom interface. Optional Mirror and Caffeine integrations are handled separately by their dedicated shortcuts.
+- Wi-Fi network selection and Power Mode menus are opened through GNOME Shell's internal Quick Settings toggle objects so GNOME can retain its native authentication and profile-selection behavior. These are private Shell internals, not a stable public API; verify them on the target GNOME version after Shell updates.
 - System-state synchronization is implemented through listeners to the relevant system services, but two-way behavior still needs runtime verification on the target GNOME session.
 
 ## Install from source
