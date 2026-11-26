@@ -65,10 +65,22 @@ The metadata allows GNOME Shell 45–51. The primary development target is **GNO
 git clone https://github.com/abazic/Control-Center-for-GNOME.git
 cd Control-Center-for-GNOME
 
+# Compile the extension's GSettings schema before packaging.
+glib-compile-schemas schemas/
+
 gnome-extensions pack --force --extra-source=control-center-symbolic.svg --out-dir=dist .
 gnome-extensions install --force dist/control-center@abazic.github.io.shell-extension.zip
 gnome-extensions enable control-center@abazic.github.io
 ```
+
+If Preferences reports that a key such as `wifi-tile-size` is missing, the installed extension copy may contain an outdated or uncompiled schema. Update the installed copy and compile its schema explicitly:
+
+```bash
+EXT_DIR="$HOME/.local/share/gnome-shell/extensions/control-center@abazic.github.io"
+glib-compile-schemas "$EXT_DIR/schemas/"
+```
+
+Then reopen the Preferences window. If the key is still missing, reinstall the latest extension package so that its `prefs.js` and schema XML come from the same revision.
 
 After installation, the **Control Center grid icon should appear in the GNOME top panel**. Click it to open the popup.
 
