@@ -8,7 +8,7 @@ A macOS-inspired Control Center for GNOME Shell, built around compact **Liquid G
 
 The extension adds its own panel indicator and popup. It provides custom controls for common system settings while continuing to use GNOME's system services.
 
-> **Development status:** The UI and system integrations are implemented in source. The primary development environment is GNOME Shell 51.1 on CachyOS / Wayland. Runtime compatibility across the full metadata version range has not yet been verified. Please report the GNOME Shell version and session type with any bug report.
+> **Development status:** The extension is developed and tested on **CachyOS with GNOME Shell 51.1**. Other GNOME Shell versions are not currently verified. Please include your GNOME Shell version and session type when reporting bugs.
 
 ## Features
 
@@ -76,8 +76,8 @@ The integration follows the [Blur my Shell extension integration guide](https://
 
 ## Compatibility and limitations
 
-- `metadata.json` currently declares GNOME Shell versions **45–51**. This is a declared compatibility range, not a statement that every version has been tested.
-- The main development target is **GNOME Shell 51.1 on CachyOS / Wayland**.
+- **Tested environment:** CachyOS with **GNOME Shell 51.1**. This is currently the only environment verified by the project maintainer.
+- `metadata.json` declares GNOME Shell versions **45–51**, but compatibility with versions other than **51.1** has not been tested or confirmed.
 - Brightness control depends on GNOME Shell's brightness manager and is implemented for GNOME 49+.
 - Wi-Fi requires NetworkManager; Bluetooth requires BlueZ; audio requires GVC and a compatible audio server; media controls require an MPRIS-compatible player.
 - Some menus and integrations use GNOME Shell internal objects, including Quick Settings toggle objects and `Main.extensionManager`. These are not stable public APIs and may change between GNOME releases.
