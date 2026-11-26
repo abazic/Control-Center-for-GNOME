@@ -285,10 +285,6 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
 export default class ControlCenterExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
-        this._quickSettingsSizeSignal = this._settings.connect(
-            'changed::quick-settings-size',
-            () => this._syncQuickSettingsSize()
-        );
         this._hideQuickSettingsSignal = this._settings.connect(
             'changed::hide-native-quick-settings',
             () => this._syncNativeQuickSettingsVisibility()
@@ -335,7 +331,7 @@ export default class ControlCenterExtension extends Extension {
             style_class: 'cc-content',
         });
         this._content = content;
-        this._syncQuickSettingsSize();
+        this._connectTileSizeSettings();
 
         const composition = new St.BoxLayout({
             style_class: 'cc-main-grid',
@@ -439,6 +435,7 @@ export default class ControlCenterExtension extends Extension {
         item.add_child(content);
         this._indicator.menu.addMenuItem(item);
         this._syncSystemState();
+        this._applyAllTileSizes();
     }
 
     _syncSystemState() {
@@ -538,17 +535,54 @@ export default class ControlCenterExtension extends Extension {
         );
     }
 
-    _syncQuickSettingsSize() {
-        if (!this._content || !this._settings)
+    _connectTileSizeSettings() {
+        this._tileSizeKeys = {
+            wifi: 'wifi-tile-size',
+            bluetooth: 'bluetooth-tile-size',
+            airplane: 'airplane-tile-size',
+            focus: 'focus-tile-size',
+            media: 'media-tile-size',
+            mirror: 'mirror-tile-size',
+            caffeine: 'caffeine-tile-size',
+        };
+        this._tileSizeSignals = [];
+        for (const [tile, key] of Object.entries(this._tileSizeKeys)) {
+            const signal = this._settings.connect(`changed::${key}`, () => {
+                this._applyTileSize(tile);
+            });
+            this._tileSizeSignals.push(signal);
+        }
+    }
+
+    _applyTileSize(tileName) {
+        const actorMap = {
+            wifi: this._wifiTile,
+            bluetooth: this._bluetoothButton,
+            airplane: this._airplaneButton,
+            focus: this._focusTile,
+            media: this._mediaTile,
+            mirror: this._mirrorButton,
+            caffeine: this._caffeineButton,
+        };
+        const actor = actorMap[tileName];
+        const key = this._tileSizeKeys?.[tileName];
+        if (!actor || !key || !this._settings)
             return;
 
-        for (const size of ['small', 'medium', 'large'])
-            this._content.remove_style_class_name(`cc-size-${size}`);
+        const value = this._settings.get_string(key);
+        const size = ['small', 'medium', 'large'].includes(value) ? value : 'small';
+        const width = size === 'small' ? SMALL : MEDIUM_WIDTH;
+        const height = size === 'large' ? LARGE_HEIGHT : SMALL;
+        actor.set_size(width, height);
+        actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${height / 2}px;`);
+        for (const option of ['small', 'medium', 'large'])
+            actor.remove_style_class_name(`cc-tile-size-${option}`);
+        actor.add_style_class_name(`cc-tile-size-${size}`);
+    }
 
-        const size = this._settings.get_string('quick-settings-size');
-        const supportedSize = ['small', 'medium', 'large'].includes(size)
-            ? size : 'small';
-        this._content.add_style_class_name(`cc-size-${supportedSize}`);
+    _applyAllTileSizes() {
+        for (const tileName of Object.keys(this._tileSizeKeys ?? {}))
+            this._applyTileSize(tileName);
     }
 
     _syncNativeQuickSettingsVisibility() {
@@ -679,12 +713,13 @@ export default class ControlCenterExtension extends Extension {
     }
 
     disable() {
-        if (this._settings && this._quickSettingsSizeSignal)
-            this._settings.disconnect(this._quickSettingsSizeSignal);
         if (this._settings && this._hideQuickSettingsSignal)
             this._settings.disconnect(this._hideQuickSettingsSignal);
-        this._quickSettingsSizeSignal = 0;
         this._hideQuickSettingsSignal = 0;
+        for (const signal of this._tileSizeSignals ?? [])
+            this._settings?.disconnect(signal);
+        this._tileSizeSignals = [];
+        this._tileSizeKeys = null;
         this._settings = null;
         this._restoreNativeQuickSettings();
         this._settings = null;
