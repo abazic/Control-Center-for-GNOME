@@ -9,6 +9,11 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 const CIRCLE = 58;
 const SPACING = 9;
 const GRID_UNIT = (2 * CIRCLE) + SPACING;
+const PILL_INSET = 6;
+const SYMBOL_SCALE = 46 / 58;
+const SYMBOL_ICON_SCALE = 30 / 58;
+const SYMBOL_SIZE = Math.round(CIRCLE * SYMBOL_SCALE);
+const SYMBOL_ICON_SIZE = Math.round(CIRCLE * SYMBOL_ICON_SCALE);
 const SURFACE = 'cc-surface bms-popup-blur-target';
 
 function label(text, styleClass) {
@@ -30,12 +35,16 @@ function makeSurface(styleClass, vertical = false) {
 
 function makeWifiTile() {
     const tile = makeSurface('cc-wifi-tile');
+    tile.set_size(GRID_UNIT, CIRCLE);
+    tile.set_style(`width: ${GRID_UNIT}px; min-width: ${GRID_UNIT}px; max-width: ${GRID_UNIT}px; height: ${CIRCLE}px; min-height: ${CIRCLE}px; max-height: ${CIRCLE}px; border-radius: ${CIRCLE / 2}px; padding: 0 ${PILL_INSET}px;`);
     const symbol = new St.BoxLayout({
         style_class: 'cc-symbol-disc',
         x_align: Clutter.ActorAlign.CENTER,
         y_align: Clutter.ActorAlign.CENTER,
     });
-    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', 30));
+    symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
+    symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
+    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', SYMBOL_ICON_SIZE));
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -64,12 +73,16 @@ function makeCircle(name, accessibleName) {
 
 function makeFocusTile() {
     const tile = makeSurface('cc-focus-tile');
+    tile.set_size(GRID_UNIT, CIRCLE);
+    tile.set_style(`width: ${GRID_UNIT}px; min-width: ${GRID_UNIT}px; max-width: ${GRID_UNIT}px; height: ${CIRCLE}px; min-height: ${CIRCLE}px; max-height: ${CIRCLE}px; border-radius: ${CIRCLE / 2}px; padding: 0 ${PILL_INSET}px;`);
     const symbol = new St.BoxLayout({
         style_class: 'cc-symbol-disc',
         x_align: Clutter.ActorAlign.CENTER,
         y_align: Clutter.ActorAlign.CENTER,
     });
-    symbol.add_child(icon('weather-clear-night-symbolic', 30));
+    symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
+    symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
+    symbol.add_child(icon('weather-clear-night-symbolic', SYMBOL_ICON_SIZE));
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
