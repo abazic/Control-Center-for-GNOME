@@ -78,6 +78,35 @@ function styleTile(actor, size) {
     actor.add_style_class_name(`cc-tile-size-${size}`);
 }
 
+// Ratakan isi menu GNOME (termasuk section dan submenu) menjadi daftar biasa.
+function collectMenuEntries(menu, entries = []) {
+    for (const item of menu?._getMenuItems?.() ?? []) {
+        if (item._getMenuItems) { // PopupMenuSection
+            if (item.actor.visible)
+                collectMenuEntries(item, entries);
+            continue;
+        }
+        if (!item.visible)
+            continue;
+        if (item._mainSection) { // pembungkus per perangkat Wi-Fi
+            collectMenuEntries(item._mainSection, entries);
+            continue;
+        }
+        if (item.menu) { // submenu
+            collectMenuEntries(item.menu, entries);
+            continue;
+        }
+        const text = item.label?.text ?? item._label?.text;
+        if (!text)
+            continue; // separator
+        const selected = Boolean(item._selectedIcon?.visible || item.state ||
+            item._ornament === PopupMenu.Ornament.CHECK ||
+            item._ornament === PopupMenu.Ornament.DOT);
+        entries.push({item, text, selected});
+    }
+    return entries;
+}
+
 function label(text, styleClass) {
     return new St.Label({text, style_class: styleClass, x_expand: true});
 }
@@ -158,12 +187,13 @@ function makeWifiTile(onClick = null, onMenuClick = null) {
     return tile;
 }
 
-function makeCircle(name, accessibleName, onClick = null) {
+function makeCircle(name, accessibleName, onClick = null, onMenu = null) {
     const button = new St.Button({
         reactive: Boolean(onClick),
         can_focus: Boolean(onClick),
         track_hover: Boolean(onClick),
         style_class: `${SURFACE} cc-round-control`,
+        button_mask: St.ButtonMask.ONE | St.ButtonMask.THREE,
         accessible_name: accessibleName,
     });
     button.set_size(SMALL, SMALL);
@@ -189,8 +219,14 @@ function makeCircle(name, accessibleName, onClick = null) {
     content.add_child(button._ccLabel);
     button.set_child(content);
     button._ccSymbol = symbol;
-    if (onClick)
-        button.connect('clicked', onClick);
+    if (onClick) {
+        button.connect('clicked', (_button, mouseButton) => {
+            if (mouseButton !== 3)
+                onClick();
+            else
+                onMenu?.();
+        });
+    }
     return button;
 }
 
@@ -314,6 +350,7 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
     tile.set_size(CONTENT_WIDTH, SMALL);
     const heading = new St.BoxLayout({x_expand: true, style_class: 'cc-slider-heading'});
     heading.add_child(label(title, 'cc-slider-title'));
+    tile._ccHeading = heading;
     tile.add_child(heading);
     const controls = new St.BoxLayout({
         x_expand: true,
@@ -394,8 +431,10 @@ export default class ControlCenterExtension extends Extension {
             (menu, isOpen) => {
                 if (isOpen)
                     this._indicator?.add_style_class_name('cc-active');
-                else
+                else {
                     this._indicator?.remove_style_class_name('cc-active');
+                    this._closeMenuOverlay();
+                }
             }
         );
         this._indicator.menu.actor.add_style_class_name('cc-control-center-menu');
@@ -430,7 +469,8 @@ export default class ControlCenterExtension extends Extension {
             () => this._mediaController.next()
         );
         this._bluetoothButton = makeCircle(
-            'bluetooth-active-symbolic', 'Bluetooth', () => this._controller.toggleBluetooth());
+            'bluetooth-active-symbolic', 'Bluetooth', () => this._controller.toggleBluetooth(),
+            () => this._openBluetoothMenu());
         this._airplaneButton = makeCircle(
             'airplane-mode-symbolic', 'Airplane Mode', () => this._controller.toggleAirplaneMode());
         this._focusTile = makeFocusTile(() => this._controller.toggleFocus());
@@ -454,6 +494,14 @@ export default class ControlCenterExtension extends Extension {
             value => this._controller.setVolume(value), 0.72,
             () => this._controller.toggleMute());
         content.add_child(this._volumeTile);
+        const outputButton = new St.Button({
+            can_focus: true,
+            track_hover: true,
+            accessible_name: 'Choose audio output',
+        });
+        outputButton.set_child(icon('pan-end-symbolic', 12, 'cc-slider-icon'));
+        outputButton.connect('clicked', () => this._openSoundMenu());
+        this._volumeTile._ccHeading.add_child(outputButton);
 
         const shortcuts = new St.BoxLayout({
             style_class: 'cc-shortcuts',
@@ -497,7 +545,10 @@ export default class ControlCenterExtension extends Extension {
         content.add_child(editControlRow);
         this._editControlRow = editControlRow;
 
-        item.add_child(content);
+        const root = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true});
+        root.add_child(content);
+        this._root = root;
+        item.add_child(root);
         this._indicator.menu.addMenuItem(item);
         this._syncSystemState();
         this._applyAllTileSizes();
@@ -678,57 +729,125 @@ export default class ControlCenterExtension extends Extension {
         this._nativeQuickSettings = null;
     }
 
-    // Submenu Quick Settings berada di dalam popup Quick Settings, jadi popup
-    // induknya harus dibuka dulu (termasuk saat indikatornya disembunyikan).
-    _openQuickSettingsSubmenu(toggle, title) {
-        const quickSettings = Main.panel.statusArea.quickSettings;
-        if (!toggle?.menu || !toggle.visible || !quickSettings) {
-            Main.notifyError(`${title} unavailable`,
-                'The matching Quick Settings menu is not available.');
+    _showMenuOverlay(title, toggle) {
+        this._closeMenuOverlay();
+        if (!toggle?.menu || !this._root) {
+            Main.notifyError(`${title} unavailable`, 'This menu is not available.');
             return;
         }
 
-        this._indicator.menu.close();
-        this._clearSubmenuRequest();
-        this._submenuSource = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-            this._submenuSource = 0;
-            quickSettings.container.show();
-            quickSettings.menu.open();
-            toggle.menu.open();
+        // Scrim menutupi tile agar klik tidak tembus ke bawah.
+        const scrim = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            style_class: 'cc-overlay',
+            reactive: true,
+            x_expand: true,
+            y_expand: true,
+        });
+        const card = new St.BoxLayout({
+            orientation: Clutter.Orientation.VERTICAL,
+            style_class: 'cc-popup',
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        const header = new St.BoxLayout({style_class: 'cc-popup-header'});
+        header.add_child(label(title, 'cc-popup-title'));
+        const closeButton = new St.Button({can_focus: true, accessible_name: 'Close'});
+        closeButton.set_child(icon('window-close-symbolic', 16));
+        closeButton.connect('clicked', () => this._closeMenuOverlay());
+        header.add_child(closeButton);
 
-            // Sembunyikan lagi indikator setelah popup ditutup.
-            this._submenuMenu = quickSettings.menu;
-            this._submenuSignal = quickSettings.menu.connect(
-                'open-state-changed', (_menu, isOpen) => {
-                    if (isOpen)
-                        return;
-                    this._clearSubmenuRequest();
-                    this._syncNativeQuickSettingsVisibility();
+        const list = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL});
+        const scroll = new St.ScrollView({style_class: 'cc-popup-scroll'});
+        if (scroll.set_child)
+            scroll.set_child(list);
+        else
+            scroll.add_actor(list);
+
+        card.add_child(header);
+        card.add_child(scroll);
+        scrim.add_child(card);
+        this._root.add_child(scrim);
+
+        // Daftar Wi-Fi hanya dipindai kalau diminta.
+        toggle._startScanning?.();
+
+        let signature = null;
+        const refresh = () => {
+            const entries = collectMenuEntries(toggle.menu);
+            const next = JSON.stringify(entries.map(e => [e.text, e.selected]));
+            if (next === signature)
+                return GLib.SOURCE_CONTINUE;
+            signature = next;
+            list.destroy_all_children();
+            for (const entry of entries) {
+                const row = new St.BoxLayout({x_expand: true});
+                row.add_child(label(entry.text, 'cc-popup-label'));
+                if (entry.selected)
+                    row.add_child(icon('object-select-symbolic', 16));
+                const button = new St.Button({
+                    style_class: 'cc-popup-item',
+                    can_focus: true,
+                    track_hover: true,
+                    x_expand: true,
                 });
+                button.set_child(row);
+                button.connect('clicked', () => {
+                    entry.item.activate(Clutter.get_current_event());
+                    // Ditutup agar dialog password / Settings tidak terhalang.
+                    this._indicator?.menu.close();
+                });
+                list.add_child(button);
+            }
+            if (!entries.length)
+                list.add_child(label('Nothing to show yet', 'cc-popup-label'));
+            return GLib.SOURCE_CONTINUE;
+        };
+        refresh();
+
+        this._overlayState = {
+            actor: scrim,
+            toggle,
+            source: GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, refresh),
+        };
+    }
+
+    _closeMenuOverlay() {
+        const state = this._overlayState;
+        if (!state)
+            return;
+        this._overlayState = null;
+        GLib.Source.remove(state.source);
+        state.toggle._stopScanning?.();
+        // Dihancurkan setelah handler klik selesai.
+        state.actor.hide();
+        GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            if (!this._destroying)
+                state.actor.destroy();
             return GLib.SOURCE_REMOVE;
         });
     }
 
-    _clearSubmenuRequest() {
-        if (this._submenuSource)
-            GLib.Source.remove(this._submenuSource);
-        this._submenuSource = 0;
-        if (this._submenuSignal)
-            this._submenuMenu.disconnect(this._submenuSignal);
-        this._submenuSignal = 0;
-        this._submenuMenu = null;
+    _openWifiMenu() {
+        this._showMenuOverlay('Wi-Fi',
+            Main.panel.statusArea.quickSettings?._network?._wirelessToggle);
     }
 
-    _openWifiMenu() {
-        // Daftar jaringan dan dialog password tetap ditangani GNOME.
-        this._openQuickSettingsSubmenu(
-            Main.panel.statusArea.quickSettings?._network?._wirelessToggle, 'Wi-Fi menu');
+    _openBluetoothMenu() {
+        this._showMenuOverlay('Bluetooth',
+            Main.panel.statusArea.quickSettings?._bluetooth?.quickSettingsItems?.[0]);
+    }
+
+    _openSoundMenu() {
+        this._showMenuOverlay('Sound Output',
+            Main.panel.statusArea.quickSettings?._volumeOutput?.quickSettingsItems?.[0]);
     }
 
     _openPowerModeMenu() {
-        this._openQuickSettingsSubmenu(
-            Main.panel.statusArea.quickSettings?._powerProfiles?.quickSettingsItems?.[0],
-            'Power Mode');
+        this._showMenuOverlay('Power Mode',
+            Main.panel.statusArea.quickSettings?._powerProfiles?.quickSettingsItems?.[0]);
     }
 
     _openPreferences() {
@@ -776,7 +895,7 @@ export default class ControlCenterExtension extends Extension {
         const caffeineToggle = extension?.stateObj?._caffeineIndicator
             ?.quickSettingsItems?.[0];
 
-        this._openQuickSettingsSubmenu(caffeineToggle, 'Caffeine');
+        this._showMenuOverlay('Caffeine', caffeineToggle);
     }
 
     _openMirrorMenu() {
@@ -784,7 +903,7 @@ export default class ControlCenterExtension extends Extension {
         const mirrorToggle = extension?.stateObj?._indicator
             ?.quickSettingsItems?.[0];
 
-        this._openQuickSettingsSubmenu(mirrorToggle, 'Mirror');
+        this._showMenuOverlay('Mirror', mirrorToggle);
     }
 
     _syncMediaState() {
@@ -811,7 +930,7 @@ export default class ControlCenterExtension extends Extension {
 
     disable() {
         this._destroying = true;
-        this._clearSubmenuRequest();
+        this._closeMenuOverlay();
         if (this._settings && this._hideQuickSettingsSignal)
             this._settings.disconnect(this._hideQuickSettingsSignal);
         this._hideQuickSettingsSignal = 0;
@@ -824,6 +943,7 @@ export default class ControlCenterExtension extends Extension {
         this._settings = null;
         this._content = null;
         this._grid = null;
+        this._root = null;
         this._editControlRow = null;
         if (this._caffeineSettings && this._caffeineSignal)
             this._caffeineSettings.disconnect(this._caffeineSignal);
