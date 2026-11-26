@@ -14,6 +14,7 @@
     box-shadow: none;
 }
 
+/* Inner layout: (2 circles + one gap) + inter-column gap + square tile. */
 .cc-content {
     width: 260px;
     padding: 10px;
@@ -36,14 +37,15 @@
     background-color: transparent;
 }
 
-/* Base unit: one circle = 58 x 58 px. Pill = 2 units wide x 1 high. */
+/* Base unit: circle = 58px. Gap = 9px.
+ * Pill: (2 × 58) + 9 = 125px wide, 58px high. */
 .cc-wifi-tile,
 .cc-focus-tile {
-    width: 116px;
+    width: 125px;
     height: 58px;
-    min-width: 116px;
+    min-width: 125px;
     min-height: 58px;
-    max-width: 116px;
+    max-width: 125px;
     max-height: 58px;
     padding: 6px;
     border-radius: 29px;
@@ -73,8 +75,9 @@
     font-size: 8px;
 }
 
+/* Two circles are separated by the same 9px base gap. */
 .cc-circle-row {
-    spacing: 0;
+    spacing: 9px;
 }
 
 .cc-round-control {
@@ -95,16 +98,16 @@
     color: #ffffff;
 }
 
-/* Rounded square = 2 x 2 circle units. */
+/* Rounded square: (2 × 58) + 9 = 125px in both directions. */
 .cc-media-tile {
-    width: 116px;
-    height: 116px;
-    min-width: 116px;
-    min-height: 116px;
-    max-width: 116px;
-    max-height: 116px;
+    width: 125px;
+    height: 125px;
+    min-width: 125px;
+    min-height: 125px;
+    max-width: 125px;
+    max-height: 125px;
     padding: 9px;
-    border-radius: 24px;
+    border-radius: 25px;
     spacing: 5px;
 }
 
