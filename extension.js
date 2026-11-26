@@ -104,6 +104,10 @@ export default class ControlCenterExtension extends Extension {
     enable() {
         console.debug(`${this.metadata.name}: enabling`);
 
+        this._stylesheet = this.getStylesheet();
+        Main.themeManager.addThemeStylesheet(this._stylesheet);
+        Main.themeManager.reloadTheme();
+
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
         this._indicator.add_child(new St.Icon({
             icon_name: 'view-grid-symbolic',
@@ -187,7 +191,14 @@ export default class ControlCenterExtension extends Extension {
 
     disable() {
         console.debug(`${this.metadata.name}: disabling`);
+
         this._indicator?.destroy();
         this._indicator = null;
+
+        if (this._stylesheet) {
+            Main.themeManager.removeThemeStylesheet(this._stylesheet);
+            Main.themeManager.reloadTheme();
+            this._stylesheet = null;
+        }
     }
 }
