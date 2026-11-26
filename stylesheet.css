@@ -367,3 +367,21 @@
 .cc-control-active .cc-symbol-disc {
     background-color: rgba(0, 127, 145, 0.10);
 }
+
+
+/* Individual tile size presets: each tile is independently configurable. */
+.cc-tile-size-small .cc-copy { opacity: 0; width: 0; max-width: 0; }
+.cc-tile-size-medium .cc-copy,
+.cc-tile-size-large .cc-copy { opacity: 1; width: auto; max-width: 120px; }
+.cc-round-control.cc-tile-size-medium { border-radius: 30px; }
+.cc-round-control.cc-tile-size-large { border-radius: 30px; }
+.cc-wifi-tile.cc-tile-size-medium,
+.cc-focus-tile.cc-tile-size-medium { padding: 0 6px; spacing: 5px; }
+.cc-wifi-tile.cc-tile-size-large,
+.cc-focus-tile.cc-tile-size-large { padding: 12px; spacing: 8px; }
+.cc-wifi-tile.cc-tile-size-small,
+.cc-focus-tile.cc-tile-size-small { padding: 0; spacing: 0; justify-content: center; }
+.cc-wifi-tile.cc-tile-size-small .cc-copy,
+.cc-focus-tile.cc-tile-size-small .cc-copy { opacity: 0; width: 0; max-width: 0; }
+.cc-wifi-tile.cc-tile-size-large .cc-copy,
+.cc-focus-tile.cc-tile-size-large .cc-copy { opacity: 1; width: 100%; }
