@@ -155,6 +155,7 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
         x_expand: true,
         style_class: `${SURFACE} cc-slider-tile`,
     });
+    tile.set_size(CONTENT_WIDTH, SMALL);
     const heading = new St.BoxLayout({x_expand: true, style_class: 'cc-slider-heading'});
     heading.add_child(label(title, 'cc-slider-title'));
     tile.add_child(heading);
