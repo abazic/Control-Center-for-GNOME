@@ -10,6 +10,8 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - macOS-inspired compact popup layout.
 - Separate pill surfaces for Wi-Fi, Bluetooth, media, Focus, Display, and Sound.
 - Wi-Fi enable/disable through NetworkManager D-Bus.
+- Wi-Fi network selection through GNOME Shell's native wireless menu, including NetworkManager-managed password prompts for secured networks; the extension does not collect or store Wi-Fi passwords.
+- Power Mode shortcut opens GNOME Shell's native power-profile menu (Performance, Balanced, and Power Saver when the system exposes those profiles).
 - Bluetooth power through the BlueZ Adapter1 D-Bus API.
 - Focus / Do Not Disturb through `org.gnome.desktop.notifications` (`show-banners`).
 - Display brightness through GNOME Shell's `org.gnome.Shell.Brightness` D-Bus interface (GNOME 49+).
