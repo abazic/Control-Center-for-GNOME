@@ -361,27 +361,8 @@
 }
 
 
-/* Active system toggles use a white surface, with a contrasting cyan glyph. */
-.cc-control-active,
-.cc-control-active:hover,
-.cc-control-active:active,
-.cc-control-active:checked {
-    background-color: #ffffff;
-    background-image: none;
-    border-color: rgba(255, 255, 255, 0.95);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-    color: #007f91;
-}
 
-.cc-control-active .cc-icon,
-.cc-control-active .cc-symbol-disc,
-.cc-control-active .cc-symbol-disc .cc-icon {
-    color: #007f91;
-}
 
-.cc-control-active .cc-symbol-disc {
-    background-color: rgba(0, 127, 145, 0.10);
-}
 
 
 /* Individual tile size presets: each tile is independently configurable. */
@@ -489,12 +470,6 @@
     flex-direction: column;
     spacing: 8px;
 }
-.cc-control-active .cc-control-symbol {
-    background-color: rgba(0, 127, 145, 0.10);
-}
-.cc-control-active .cc-control-symbol .cc-icon {
-    color: #007f91;
-}
 
 
 /* Slider bawaan GNOME untuk Display dan Sound. */
@@ -528,3 +503,32 @@
 .cc-popup-item:hover,
 .cc-popup-item:focus { background-color: rgba(255, 255, 255, 0.15); }
 .cc-popup-label { font-size: 12px; }
+
+/* Nonaktif: tombol transparan. Selektor dibuat lebih spesifik daripada
+ * aturan .bms-popup-blurred agar tidak tertimpa. */
+.cc-surface.cc-round-control,
+.cc-surface.cc-wifi-tile,
+.cc-surface.cc-focus-tile {
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Small: tanpa lingkaran dalam. */
+.cc-surface.cc-tile-size-small .cc-symbol-disc {
+    background-color: transparent;
+}
+
+/* Aktif, ukuran Small: seluruh bulatan putih. */
+.cc-surface.cc-control-active.cc-tile-size-small {
+    background-color: #ffffff;
+    border-color: #ffffff;
+}
+
+/* Aktif, ukuran Medium/Large: lingkaran ikon putih, badan tetap transparan. */
+.cc-surface.cc-control-active.cc-tile-size-medium .cc-symbol-disc,
+.cc-surface.cc-control-active.cc-tile-size-large .cc-symbol-disc {
+    background-color: #ffffff;
+}
+
+.cc-surface.cc-control-active .cc-symbol-disc .cc-icon {
+    color: #0a7aff;
+}
