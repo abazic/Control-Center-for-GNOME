@@ -77,7 +77,7 @@ The integration follows the [Blur my Shell extension integration guide](https://
 ## Compatibility and limitations
 
 - **Tested environment:** CachyOS with **GNOME Shell 51.1**. This is currently the only environment verified by the project maintainer.
-- `metadata.json` declares GNOME Shell versions **45–51**, but compatibility with versions other than **51.1** has not been tested or confirmed.
+- `metadata.json` declares GNOME Shell **51**. The extension has been tested on **GNOME Shell 51.1**; other major GNOME Shell versions are not currently verified.
 - Brightness control depends on GNOME Shell's brightness manager and is implemented for GNOME 49+.
 - Wi-Fi requires NetworkManager; Bluetooth requires BlueZ; audio requires GVC and a compatible audio server; media controls require an MPRIS-compatible player.
 - Some menus and integrations use GNOME Shell internal objects, including Quick Settings toggle objects and `Main.extensionManager`. These are not stable public APIs and may change between GNOME releases.
