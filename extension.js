@@ -9,6 +9,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as Slider from 'resource:///org/gnome/shell/ui/slider.js';
 
 const SMALL = 60;
 const SPACING = 10;
@@ -325,86 +326,31 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
         style_class: 'cc-slider-controls',
     });
     controls.add_child(icon(leadingIcon, 15, 'cc-slider-icon'));
-    const track = new St.Widget({
-        x_expand: true,
-        reactive: Boolean(onValueChanged),
-        can_focus: Boolean(onValueChanged),
-        style_class: 'cc-slider-track',
+    const slider = new Slider.Slider(Math.max(0, Math.min(1, initialValue)));
+    slider.x_expand = true;
+    slider.y_align = Clutter.ActorAlign.CENTER;
+    slider.accessible_name = title;
+    // true saat nilai diubah oleh sistem, agar tidak dikirim balik ke sistem.
+    let syncing = false;
+    slider.connect('notify::value', () => {
+        if (!syncing && onValueChanged)
+            onValueChanged(slider.value);
     });
-    const fill = new St.Widget({
-        reactive: false,
-        style_class: `cc-slider-fill ${fillClass}`,
-    });
-    track.add_child(fill);
-    let currentValue = Math.max(0, Math.min(1, initialValue));
-    let dragSignal = 0;
-    const updateFillWidth = () => {
-        const width = track.get_width();
-        if (width > 0)
-            fill.set_width(currentValue * width);
-    };
-    const setValue = value => {
-        currentValue = Math.max(0, Math.min(1, value));
-        updateFillWidth();
-        if (onValueChanged)
-            onValueChanged(currentValue);
-    };
-    const updateFromEvent = event => {
-        const [stageX] = event.get_coords();
-        const [trackX] = track.get_transformed_position();
-        const width = track.get_width();
-        if (width > 0)
-            setValue((stageX - trackX) / width);
-    };
-    const stopDragging = () => {
-        if (dragSignal) {
-            global.stage.disconnect(dragSignal);
-            dragSignal = 0;
-        }
-    };
-    track.connect('notify::width', updateFillWidth);
-    if (onValueChanged) {
-        // Listen on the stage while dragging so motion continues to update
-        // even when the pointer leaves the narrow slider track.
-        track.connect('button-press-event', (actor, event) => {
-            if (event.get_button() !== 1)
-                return Clutter.EVENT_PROPAGATE;
-            updateFromEvent(event);
-            stopDragging();
-            dragSignal = global.stage.connect('captured-event', (stage, dragEvent) => {
-                const type = dragEvent.type();
-                if (type === Clutter.EventType.MOTION) {
-                    updateFromEvent(dragEvent);
-                    return Clutter.EVENT_STOP;
-                }
-                if (type === Clutter.EventType.BUTTON_RELEASE &&
-                    dragEvent.get_button() === 1) {
-                    updateFromEvent(dragEvent);
-                    stopDragging();
-                    return Clutter.EVENT_STOP;
-                }
-                return Clutter.EVENT_PROPAGATE;
-            });
-            return Clutter.EVENT_STOP;
-        });
-        track.connect('destroy', stopDragging);
-    }
-    updateFillWidth();
     tile._ccSetValue = value => {
-        currentValue = Math.max(0, Math.min(1, value));
-        updateFillWidth();
+        syncing = true;
+        slider.value = Math.max(0, Math.min(1, value));
+        syncing = false;
     };
     tile._ccSetEnabled = enabled => {
-        track.reactive = Boolean(enabled && onValueChanged);
-        track.can_focus = Boolean(enabled && onValueChanged);
-        track.opacity = enabled ? 255 : 110;
+        slider.reactive = Boolean(enabled && onValueChanged);
+        slider.can_focus = Boolean(enabled && onValueChanged);
+        slider.opacity = enabled ? 255 : 110;
         if (tile._ccTrailingButton) {
             tile._ccTrailingButton.reactive = Boolean(enabled && trailingAction);
             tile._ccTrailingButton.opacity = enabled ? 255 : 110;
         }
     };
-    tile._ccTrack = track;
-    controls.add_child(track);
+    controls.add_child(slider);
     if (trailingAction) {
         const trailingButton = new St.Button({
             reactive: true,
