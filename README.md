@@ -20,7 +20,7 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Mirror shortcut opens the device list from the optional `Mirror` GNOME extension (`mirror@distro.com`).
 - Timer shortcut opens the optional `Caffeine` GNOME extension's timer menu (`caffeine@patapon.info`); its active state is reflected in the Control Center.
 - Control Center is the primary replacement interface: its custom macOS-inspired controls operate the same GNOME system services as native Quick Settings (NetworkManager, BlueZ, GNOME notification settings, GNOME Shell brightness, and GVC audio). This keeps system state synchronized without displaying duplicate native controls.
-- The native GNOME Quick Settings panel indicator is hidden while this extension is enabled and restored when it is disabled. The native Quick Settings grid is not reparented, modified, or shown inside the custom popup.
+- The native GNOME Quick Settings panel indicator can be hidden or shown with the **Hide Quick Settings bawaan** switch in Preferences. It is enabled by default; when disabled, GNOME's native indicator remains available. The native Quick Settings grid is not reparented, modified, or shown inside the custom popup.
 - System actions are routed through the underlying GNOME services rather than copied native Quick Settings actors. This is intended to keep the custom controls aligned with system state while avoiding duplicate tiles.
 - The tile-size preference is available in the extension Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square). This size selector changes the custom Wi-Fi and Focus tiles; the other shortcut circles, media tile, and sliders retain their own layout dimensions.
 - Each pill has its own `bms-popup-blur-target` class.
@@ -52,7 +52,7 @@ The metadata allows GNOME Shell 45–51. The primary development target is **GNO
 
 ### Replacement behavior and current limitations
 
-- Hiding the native Quick Settings panel indicator removes the normal panel entry point while the extension is active. It does not yet guarantee that every GNOME keyboard shortcut or other Shell entry point that opens native Quick Settings is intercepted.
+- When **Hide Quick Settings bawaan** is enabled, the normal native panel entry point is hidden while the extension is active. This does not yet guarantee that every GNOME keyboard shortcut or other Shell entry point that opens native Quick Settings is intercepted.
 - Native Quick Settings tiles supplied by unrelated third-party extensions are not automatically imported into this custom interface. Optional Mirror and Caffeine integrations are handled separately by their dedicated shortcuts.
 - System-state synchronization is implemented through listeners to the relevant system services, but two-way behavior still needs runtime verification on the target GNOME session.
 
@@ -100,7 +100,7 @@ gnome-shell --version
 - [x] Assign a separate Blur my Shell target to every pill.
 - [x] Add transparent popup shell and translucent pill fallback.
 - [ ] Verify install, enable, and popup rendering on real GNOME sessions.
-- [ ] Runtime-test native Quick Settings indicator hiding/restoration, keyboard-shortcut behavior, and two-way system-state synchronization on GNOME 51.
+- [ ] Runtime-test the Hide Quick Settings preference, native indicator visibility changes, keyboard-shortcut behavior, and two-way system-state synchronization on GNOME 51.
 - [ ] Tune layout against the supplied macOS Control Center reference.
 - [ ] Add hover, pressed, active, and disabled visual states.
 - [ ] Add responsive sizing and light/dark appearance handling.
