@@ -533,6 +533,7 @@ export default class ControlCenterExtension extends Extension {
 
         const root = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true});
         root.add_child(content);
+        root.add_child(this._buildPopup());
         this._root = root;
         item.add_child(root);
         this._indicator.menu.addMenuItem(item);
@@ -727,40 +728,12 @@ export default class ControlCenterExtension extends Extension {
             return;
         }
 
-        // Scrim menutupi tile agar klik tidak tembus ke bawah.
-        const scrim = new St.Widget({
-            layout_manager: new Clutter.BinLayout(),
-            style_class: 'cc-overlay',
-            reactive: true,
-            x_expand: true,
-            y_expand: true,
-        });
-        const card = new St.BoxLayout({
-            orientation: Clutter.Orientation.VERTICAL,
-            style_class: 'cc-popup',
-            x_expand: true,
-            y_expand: true,
-            x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER,
-        });
-        const header = new St.BoxLayout({style_class: 'cc-popup-header'});
-        header.add_child(label(title, 'cc-popup-title'));
-        const closeButton = new St.Button({can_focus: true, accessible_name: 'Close'});
-        closeButton.set_child(icon('window-close-symbolic', 16));
-        closeButton.connect('clicked', () => this._closeMenuOverlay());
-        header.add_child(closeButton);
-
-        const list = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL});
-        const scroll = new St.ScrollView({style_class: 'cc-popup-scroll'});
-        if (scroll.set_child)
-            scroll.set_child(list);
-        else
-            scroll.add_actor(list);
-
-        card.add_child(header);
-        card.add_child(scroll);
-        scrim.add_child(card);
-        this._root.add_child(scrim);
+        const {scrim, titleLabel, list} = this._popup;
+        titleLabel.text = title;
+        list.destroy_all_children();
+        // Tile disembunyikan (blur-nya ikut hilang) selama popup terbuka.
+        this._content.opacity = 0;
+        scrim.show();
 
         // Daftar Wi-Fi hanya dipindai kalau diminta.
         toggle._startScanning?.();
@@ -799,10 +772,48 @@ export default class ControlCenterExtension extends Extension {
         refresh();
 
         this._overlayState = {
-            actor: scrim,
             toggle,
             source: GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, refresh),
         };
+    }
+
+    _buildPopup() {
+        // Scrim mencegah klik tembus ke tile di bawahnya.
+        const scrim = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            reactive: true,
+            x_expand: true,
+            y_expand: true,
+            visible: false,
+        });
+        const card = new St.BoxLayout({
+            orientation: Clutter.Orientation.VERTICAL,
+            style_class: `${SURFACE} cc-popup`,
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        const header = new St.BoxLayout({style_class: 'cc-popup-header'});
+        const titleLabel = label('', 'cc-popup-title');
+        header.add_child(titleLabel);
+        const closeButton = new St.Button({can_focus: true, accessible_name: 'Close'});
+        closeButton.set_child(icon('window-close-symbolic', 16));
+        closeButton.connect('clicked', () => this._closeMenuOverlay());
+        header.add_child(closeButton);
+
+        const list = new St.BoxLayout({orientation: Clutter.Orientation.VERTICAL});
+        const scroll = new St.ScrollView({style_class: 'cc-popup-scroll'});
+        if (scroll.set_child)
+            scroll.set_child(list);
+        else
+            scroll.add_actor(list);
+
+        card.add_child(header);
+        card.add_child(scroll);
+        scrim.add_child(card);
+        this._popup = {scrim, titleLabel, list};
+        return scrim;
     }
 
     _closeMenuOverlay() {
@@ -812,13 +823,8 @@ export default class ControlCenterExtension extends Extension {
         this._overlayState = null;
         GLib.Source.remove(state.source);
         state.toggle._stopScanning?.();
-        // Dihancurkan setelah handler klik selesai.
-        state.actor.hide();
-        GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-            if (!this._destroying)
-                state.actor.destroy();
-            return GLib.SOURCE_REMOVE;
-        });
+        this._popup.scrim.hide();
+        this._content.opacity = 255;
     }
 
     _openWifiMenu() {
@@ -1013,6 +1019,7 @@ export default class ControlCenterExtension extends Extension {
         this._content = null;
         this._grid = null;
         this._root = null;
+        this._popup = null;
         this._editControlRow = null;
         if (this._caffeineSettings && this._caffeineSignal)
             this._caffeineSettings.disconnect(this._caffeineSignal);
