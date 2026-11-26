@@ -36,6 +36,7 @@ export class MediaController {
         this._players = new Map();
         this._proxy = null;
         this._proxySignal = 0;
+        this._activeBusName = null;
         this._state = {
             available: false,
             title: 'Not Playing',
@@ -92,6 +93,7 @@ export class MediaController {
     _selectPlayer() {
         const names = [...this._players.keys()];
         let selected = null;
+        let selectedName = null;
         for (const name of names) {
             try {
                 const candidate = Gio.DBusProxy.new_sync(
@@ -100,29 +102,33 @@ export class MediaController {
                 );
                 if (unpack(candidate.get_cached_property('PlaybackStatus')) === 'Playing') {
                     selected = candidate;
+                    selectedName = name;
                     break;
                 }
-                selected ??= candidate;
+                if (!selected) {
+                    selected = candidate;
+                    selectedName = name;
+                }
             } catch (error) {
                 logError(error, `Unable to connect to MPRIS player ${name}`);
                 this._players.delete(name);
             }
         }
 
-        if (selected?.g_name_owner === this._proxy?.g_name_owner &&
-            selected?.g_name === this._proxy?.g_name)
+        if (selectedName === this._activeBusName)
             return;
 
         if (this._proxy && this._proxySignal)
             this._proxy.disconnect(this._proxySignal);
         this._proxy = selected;
+        this._activeBusName = selectedName;
         this._proxySignal = 0;
 
         if (selected) {
             this._proxySignal = selected.connect(
                 'g-properties-changed', () => this._refresh()
             );
-            this._state.playerName = selected.g_name ?? '';
+            this._state.playerName = selectedName ?? ''; 
             this._refresh();
         } else {
             this._state = {
@@ -176,6 +182,7 @@ export class MediaController {
         if (this._nameSignal)
             this._connection.signal_unsubscribe(this._nameSignal);
         this._proxy = null;
+        this._activeBusName = null;
         this._dbus = null;
         this._connection = null;
         this._players.clear();
