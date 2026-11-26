@@ -42,7 +42,9 @@ function makeWifiTile() {
         style_class: 'cc-symbol-disc',
     });
     symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
-    symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
+    symbol.set_x_align(Clutter.ActorAlign.CENTER);
+    symbol.set_y_align(Clutter.ActorAlign.CENTER);
+    symbol.set_style(`width: ${SYMBOL_SIZE}px; min-width: ${SYMBOL_SIZE}px; max-width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px; min-height: ${SYMBOL_SIZE}px; max-height: ${SYMBOL_SIZE}px;`);
     const symbolIcon = icon('network-wireless-signal-excellent-symbolic', SYMBOL_ICON_SIZE);
     symbolIcon.set_x_align(Clutter.ActorAlign.CENTER);
     symbolIcon.set_y_align(Clutter.ActorAlign.CENTER);
@@ -82,7 +84,9 @@ function makeFocusTile() {
         style_class: 'cc-symbol-disc',
     });
     symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
-    symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
+    symbol.set_x_align(Clutter.ActorAlign.CENTER);
+    symbol.set_y_align(Clutter.ActorAlign.CENTER);
+    symbol.set_style(`width: ${SYMBOL_SIZE}px; min-width: ${SYMBOL_SIZE}px; max-width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px; min-height: ${SYMBOL_SIZE}px; max-height: ${SYMBOL_SIZE}px;`);
     const symbolIcon = icon('weather-clear-night-symbolic', SYMBOL_ICON_SIZE);
     symbolIcon.set_x_align(Clutter.ActorAlign.CENTER);
     symbolIcon.set_y_align(Clutter.ActorAlign.CENTER);
