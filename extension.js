@@ -552,10 +552,14 @@ export default class ControlCenterExtension extends Extension {
             if (currentParent)
                 currentParent.remove_child(grid);
 
-            parent.insert_child_at_index(
-                grid,
-                Math.max(0, this._quickSettingsIndex)
-            );
+            try {
+                parent.insert_child_at_index(
+                    grid,
+                    Math.max(0, this._quickSettingsIndex)
+                );
+            } catch (error) {
+                logError(error, 'Unable to restore the original Quick Settings grid');
+            }
             grid.remove_style_class_name('cc-native-quick-settings');
             for (const size of ['small', 'medium', 'large'])
                 grid.remove_style_class_name(`quick-settings-size-${size}`);
@@ -564,6 +568,7 @@ export default class ControlCenterExtension extends Extension {
         this._nativeQuickSettings?.container?.show();
         this._quickSettingsGrid = null;
         this._quickSettingsParent = null;
+        this._quickSettingsIndex = -1;
         this._nativeQuickSettings = null;
     }
 
