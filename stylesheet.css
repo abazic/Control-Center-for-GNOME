@@ -1,4 +1,4 @@
-/* Grid system: circle 60px, spacing 10px, two-unit tile 130px. */
+/* Size system: Small = 60px, Spacing = 10px, Medium = 130 × 60px, Large = 130 × 130px. */
 .cc-control-center-menu {
     background-color: transparent;
     border: 0;
@@ -42,7 +42,7 @@
     background-color: transparent;
 }
 
-/* Pill = 2 circles + 1 gap by 1 circle = 130 × 60px. */
+/* Medium = (2 × Small) + Spacing by 1 × Small = 130 × 60px. */
 .cc-wifi-tile,
 .cc-focus-tile {
     width: 130px;
@@ -79,7 +79,7 @@
     font-size: 8px;
 }
 
-/* Circle = 60 × 60px; circle row = 2 circles + 1 gap = 130px. */
+/* Small = 60 × 60px; two Small controls + Spacing = 130px. */
 .cc-circle-row {
     width: 130px;
     spacing: 10px;
@@ -107,7 +107,7 @@
     color: #ffffff;
 }
 
-/* Rounded square = (2 circles + 1 gap)² = 130 × 130px. */
+/* Large = (2 × Small) + Spacing by (2 × Small) + Spacing = 130 × 130px. */
 .cc-media-column {
     width: 130px;
     spacing: 10px;
@@ -130,11 +130,11 @@
 
 .cc-media-tile {
     width: 130px;
-    height: 125px;
+    height: 130px;
     min-width: 130px;
-    min-height: 125px;
+    min-height: 130px;
     max-width: 130px;
-    max-height: 125px;
+    max-height: 130px;
     padding: 0;
     border-radius: 30px;
     spacing: 5px;
