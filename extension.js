@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -162,7 +163,8 @@ export default class ControlCenterExtension extends Extension {
     enable() {
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
         this._indicator.add_child(new St.Icon({
-            icon_name: 'view-grid-symbolic',
+            gicon: new Gio.FileIcon({file: this.dir.get_child('control-center-symbolic.svg')}),
+            icon_size: 22,
             style_class: 'system-status-icon',
         }));
         this._indicator.menu.actor.add_style_class_name('cc-control-center-menu');
