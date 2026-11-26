@@ -1,165 +1,185 @@
 # Control Center for GNOME
 
-A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pills.
+A macOS-inspired Control Center for GNOME Shell, built around compact **Liquid Glass-style tiles** with optional per-tile blur through Blur my Shell.
 
-> **Status:** Custom Control Center replacement UI implemented; GNOME 51.1 runtime verification is still pending. Wi-Fi, Bluetooth, Do Not Disturb, display brightness (GNOME Shell 49+), and output volume are connected to system services.
+The extension adds its own panel indicator and popup. It provides custom controls for common system settings while continuing to use GNOME's system services.
 
-## What is implemented
+> **Development status:** The UI and system integrations are implemented in source. The primary development environment is GNOME Shell 51.1 on CachyOS / Wayland. Runtime compatibility across the full metadata version range has not yet been verified. Please report the GNOME Shell version and session type with any bug report.
 
-- Panel indicator to open the Control Center.
-- macOS-inspired compact popup layout.
-- Separate pill surfaces for Wi-Fi, Bluetooth, media, Focus, Display, and Sound.
-- Wi-Fi enable/disable through NetworkManager D-Bus.
-- Wi-Fi enable/disable through the main tile, plus a dedicated menu affordance that opens GNOME Shell's native wireless network list. Secured networks use NetworkManager-managed password prompts; the extension does not collect or store Wi-Fi passwords.
-- Power Mode shortcut opens GNOME Shell's native power-profile menu (Performance, Balanced, and Power Saver when the system exposes those profiles).
-- Bluetooth power through the BlueZ Adapter1 D-Bus API.
-- Focus / Do Not Disturb through `org.gnome.desktop.notifications` (`show-banners`).
-- Display brightness through GNOME Shell's `Main.brightnessManager.globalScale` API (GNOME 49+).
-- Output volume and mute through GVC / the PulseAudio-compatible audio server, including PipeWire-Pulse.
-- MPRIS media controls for the active session player (previous, play/pause, next, title, and artist).
-- Airplane Mode coordination for Wi-Fi, Bluetooth, and WWAN when the modem exposes that control; the previous radio states are restored when disabling it.
-- Audio output switching through GVC; click the speaker shortcut to cycle through available output sinks.
-- Mirror shortcut opens the device list from the optional `Mirror` GNOME extension (`mirror@distro.com`).
-- Timer shortcut opens the optional `Caffeine` GNOME extension's timer menu (`caffeine@patapon.info`); its active state is reflected in the Control Center.
-- Control Center is the primary replacement interface: its custom macOS-inspired controls operate the same GNOME system services as native Quick Settings (NetworkManager, BlueZ, GNOME notification settings, GNOME Shell brightness, and GVC audio). This keeps system state synchronized without displaying duplicate native controls.
-- The native GNOME Quick Settings panel indicator can be hidden or shown with the **Hide Quick Settings bawaan** switch in Preferences. It is enabled by default; when disabled, GNOME's native indicator remains available. The native Quick Settings grid is not reparented, modified, or shown inside the custom popup.
-- System actions are routed through the underlying GNOME services rather than copied native Quick Settings actors. This is intended to keep the custom controls aligned with system state while avoiding duplicate tiles.
-- Each supported tile has an independent size preference in the extension Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square, 29 px corner radius; equivalent to 2 small tiles plus one spacing unit per side). Media Player defaults to Large; the other tiles default to Small.
-- Each pill has its own `bms-popup-blur-target` class.
-- Transparent popup/layout shell with a translucent fallback style on individual pills.
-- GNOME Shell ES module extension structure.
+## Features
 
-## Important: per-pill blur
+### System controls
 
-[Blur my Shell](https://github.com/aunetx/blur-my-shell) is the optional blur provider.
+- **Wi-Fi**
+  - Toggle wireless networking on or off.
+  - Open the available network list from the Wi-Fi tile.
+  - Network selection and authentication are handled by GNOME / NetworkManager; this extension does not collect or store Wi-Fi passwords.
+- **Bluetooth**
+  - Toggle the Bluetooth adapter on or off.
+  - Open the Bluetooth device menu.
+- **Airplane Mode**
+  - Turn off Wi-Fi, WWAN (when exposed by NetworkManager), and Bluetooth together.
+  - Restore the radio states that were active before Airplane Mode was enabled.
+- **Focus / Do Not Disturb**
+  - Toggle notification banners through the `org.gnome.desktop.notifications` GSettings schema.
+- **Display**
+  - Adjust display brightness using GNOME Shell's `Main.brightnessManager.globalScale` API (GNOME 49+).
+- **Sound**
+  - Adjust the default output volume and toggle mute.
+  - Open GNOME's sound-output menu to choose an output device.
+  - Audio control uses GVC and works with the PulseAudio-compatible audio server, including PipeWire-Pulse.
+- **Power Mode**
+  - Open GNOME's native power-profile menu. Available profiles depend on the hardware and system configuration.
 
-The extension integration guide documents `bms-popup-blur-target`. This class is applied to **each individual pill**, never just to the outer popup. Blur my Shell follows each pill's own `border-radius`, leaving the gaps between pills visually distinct.
+### Media player
 
-The popup itself is a transparent layout container. Without Blur my Shell, each pill retains a translucent CSS fallback.
+- Detects MPRIS media players on the session D-Bus.
+- Shows the active player's track title and artist.
+- Provides previous, play / pause, and next controls when supported by the player.
 
-Official reference: [Blur my Shell extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md).
+### Optional extension integrations
 
-## Optional integrations
+- **Mirror** — opens the device menu supplied by the [Mirror GNOME extension](https://extensions.gnome.org/extension/9053/mirror/) (`mirror@distro.com`).
+- **Caffeine** — opens the timer menu supplied by the [Caffeine GNOME extension](https://extensions.gnome.org/extension/517/caffeine/) (`caffeine@patapon.info`) and reflects its enabled state.
 
-The Mirror and Caffeine shortcuts hand off to the upstream GNOME extensions; they do not bundle or install them.
+Mirror and Caffeine are not bundled with this project. Install and enable them separately to use their shortcuts. If an integration is unavailable, its menu cannot be opened.
 
-- [Mirror](https://extensions.gnome.org/extension/9053/mirror/) (`mirror@distro.com`) — opens its native Android device menu. Mirror itself requires `adb`, `scrcpy`, `avahi-browse`, and `qrencode`.
-- [Caffeine](https://extensions.gnome.org/extension/517/caffeine/) (`caffeine@patapon.info`) — opens its native timer menu. The Control Center also reflects Caffeine's active state.
+### Additional Quick Settings tiles
 
-Install and enable each upstream extension separately. If an extension is missing or disabled, its shortcut shows an explanatory notification.
+When the custom Control Center popup is open, the extension can discover eligible third-party toggle items from GNOME's native Quick Settings grid and display them as additional tiles. This depends on GNOME Shell's internal Quick Settings objects and is therefore version-sensitive.
 
-## Compatibility
+### Appearance and preferences
 
-The metadata allows GNOME Shell 45–51. The primary development target is **GNOME Shell 51.1 on CachyOS / Wayland**. Some integrations are version- or service-dependent: the Shell brightness D-Bus interface is available on GNOME 49 and later, while Wi-Fi, Bluetooth, Do Not Disturb, and audio depend on NetworkManager, BlueZ, the GNOME notification schema, and GVC respectively. This compatibility range is not a claim that every version has been runtime-tested.
+- A macOS-inspired popup with separate rounded tile surfaces.
+- Optional per-tile blur integration using the `bms-popup-blur-target` class.
+- Translucent CSS fallback styling when Blur my Shell is not installed or not providing blur.
+- Preferences let you choose **Small**, **Medium**, or **Large** sizes independently for Wi-Fi, Bluetooth, Airplane Mode, Focus, Mirror, and Caffeine tiles.
+  - Small: 60 × 60 px
+  - Medium: 130 × 60 px
+  - Large: 130 × 130 px
+- The Media Player tile currently stays at Large size.
+- The **Kunci Quick Settings bawaan** preference locks the native Quick Settings menu while this extension is enabled. The native panel icon remains visible, but its menu cannot be opened. Turn the preference off to restore the native menu.
 
-### Replacement behavior and current limitations
+## Blur my Shell integration
 
-- When **Hide Quick Settings bawaan** is enabled, the normal native panel entry point is hidden while the extension is active. This does not yet guarantee that every GNOME keyboard shortcut or other Shell entry point that opens native Quick Settings is intercepted.
-- Native Quick Settings tiles supplied by unrelated third-party extensions are not automatically imported into this custom interface. Optional Mirror and Caffeine integrations are handled separately by their dedicated shortcuts.
-- Wi-Fi network selection and Power Mode menus are opened through GNOME Shell's internal Quick Settings toggle objects so GNOME can retain its native authentication and profile-selection behavior. These are private Shell internals, not a stable public API; verify them on the target GNOME version after Shell updates.
-- System-state synchronization is implemented through listeners to the relevant system services, but two-way behavior still needs runtime verification on the target GNOME session.
+[Blur my Shell](https://github.com/aunetx/blur-my-shell) is an optional blur provider.
 
-## Install from source
+Each tile surface receives its own `bms-popup-blur-target` class rather than applying the class only to the outer popup. This lets Blur my Shell follow each tile's rounded corners while preserving the gaps between tiles.
+
+The outer popup remains a transparent layout container. Without Blur my Shell, each tile uses the extension's translucent CSS background.
+
+The integration follows the [Blur my Shell extension integration guide](https://github.com/aunetx/blur-my-shell/blob/master/docs/extension-integration.md).
+
+## Compatibility and limitations
+
+- `metadata.json` currently declares GNOME Shell versions **45–51**. This is a declared compatibility range, not a statement that every version has been tested.
+- The main development target is **GNOME Shell 51.1 on CachyOS / Wayland**.
+- Brightness control depends on GNOME Shell's brightness manager and is implemented for GNOME 49+.
+- Wi-Fi requires NetworkManager; Bluetooth requires BlueZ; audio requires GVC and a compatible audio server; media controls require an MPRIS-compatible player.
+- Some menus and integrations use GNOME Shell internal objects, including Quick Settings toggle objects and `Main.extensionManager`. These are not stable public APIs and may change between GNOME releases.
+- Locking the native Quick Settings menu does not guarantee that every keyboard shortcut or other Shell entry point that can open native Quick Settings is intercepted.
+- Third-party Quick Settings tiles are discovered dynamically and may not all be compatible with this custom interface.
+- System-state synchronization is implemented through service and settings signals, but should be tested on the GNOME version and hardware you use.
+
+## Installation from source
+
+### Requirements
+
+- GNOME Shell with the `gnome-extensions` command-line utility.
+- `glib-compile-schemas` (for the GSettings schema).
+- NetworkManager for Wi-Fi, BlueZ for Bluetooth, and GVC / a PulseAudio-compatible server for audio controls.
+- [Blur my Shell](https://extensions.gnome.org/extension/)
+  is optional and only needed for the blur effect.
+
+### Build and install
+
+Clone the repository and package the extension:
 
 ```bash
 git clone https://github.com/abazic/Control-Center-for-GNOME.git
 cd Control-Center-for-GNOME
 
-# Compile the extension's GSettings schema before packaging.
 glib-compile-schemas schemas/
 
-gnome-extensions pack --force --extra-source=control-center-symbolic.svg --out-dir=dist .
-gnome-extensions install --force dist/control-center@abazic.github.io.shell-extension.zip
+mkdir -p dist
+gnome-extensions pack --force \
+  --extra-source=control-center-symbolic.svg \
+  --out-dir=dist .
+
+gnome-extensions install --force \
+  dist/control-center@abazic.github.io.shell-extension.zip
+
 gnome-extensions enable control-center@abazic.github.io
 ```
 
-If Preferences reports that a key such as `wifi-tile-size` is missing, the installed extension copy may contain an outdated or uncompiled schema. Update the installed copy and compile its schema explicitly:
+After installation, the Control Center icon should appear in the GNOME top panel. Select it to open the popup.
+
+If the extension was installed previously, install the newly built ZIP again so the installed copy contains the latest files. On Wayland, log out and log back in if GNOME Shell does not reload the extension.
+
+### Verify the installation
+
+```bash
+gnome-extensions list --enabled
+gnome-extensions info control-center@abazic.github.io
+gnome-shell --version
+```
+
+To follow GNOME Shell logs while testing:
+
+```bash
+journalctl -f -o cat /usr/bin/gnome-shell
+```
+
+If Preferences reports that a GSettings key is missing, verify that the installed extension contains the schema XML and that the schema is compiled:
 
 ```bash
 EXT_DIR="$HOME/.local/share/gnome-shell/extensions/control-center@abazic.github.io"
 glib-compile-schemas "$EXT_DIR/schemas/"
 ```
 
-Then **log out of GNOME and log back in** so GNOME Shell reloads its extension schema source, and reopen Preferences. If the key is still missing, reinstall the latest extension package so that its `prefs.js` and schema XML come from the same revision.
-
-After installation, the **Control Center grid icon should appear in the GNOME top panel**. Click it to open the popup.
-
-If the extension was installed before this update, reinstall the newly packaged ZIP so that the updated metadata and code replace the old copy. On Wayland, log out and log back in if GNOME Shell does not reload the extension.
-
-Check whether GNOME sees the extension:
-
-```bash
-gnome-extensions list --enabled
-gnome-extensions info control-center@abazic.github.io
-```
-
-Inspect Shell errors:
-
-```bash
-journalctl -f -o cat /usr/bin/gnome-shell
-```
-
-If it does not appear or fails to enable, include the output of the commands above and:
-
-```bash
-gnome-shell --version
-```
-
-## Roadmap
-
-### Front end
-
-- [x] Add extension metadata and ES module entry point.
-- [x] Add top-panel indicator and popup.
-- [x] Build the first Control Center pill layout.
-- [x] Assign a separate Blur my Shell target to every pill.
-- [x] Add transparent popup shell and translucent pill fallback.
-- [ ] Verify install, enable, and popup rendering on real GNOME sessions.
-- [ ] Runtime-test the Hide Quick Settings preference, native indicator visibility changes, keyboard-shortcut behavior, and two-way system-state synchronization on GNOME 51.
-- [ ] Tune layout against the supplied macOS Control Center reference.
-- [ ] Add hover, pressed, active, and disabled visual states.
-- [ ] Add responsive sizing and light/dark appearance handling.
-
-### System integrations
-
-- [x] Wi-Fi state/actions through NetworkManager.
-- [x] Bluetooth power/state through BlueZ.
-- [x] Focus / Do Not Disturb through GSettings.
-- [x] Display brightness through GNOME Shell `Main.brightnessManager.globalScale` (GNOME 49+).
-- [x] Output volume through GVC.
-- [x] Airplane Mode coordination where supported (NetworkManager Wi-Fi/WWAN + BlueZ Bluetooth).
-- [x] MPRIS media controls (active player selection and metadata).
-- [x] Audio output switching through GVC (cycle available output sinks).
-- [x] Mirror extension hand-off (`mirror@distro.com`; opens its native device menu).
-- [x] Caffeine extension hand-off (`caffeine@patapon.info`; opens its timer menu and tracks active state).
-- [x] Extension preferences entry point and configurable Quick Settings tile size.
+Then log out and back in so GNOME Shell reloads the installed extension and its schema.
 
 ## Project structure
 
 ```text
 .
 ├── extension.js
+├── system.js
+├── media.js
 ├── prefs.js
 ├── schemas/
 │   └── org.gnome.shell.extensions.control-center.gschema.xml
-├── system.js
-├── media.js
 ├── metadata.json
 ├── stylesheet.css
 ├── control-center-symbolic.svg
-├── README.md
-└── .gitignore
+└── README.md
 ```
+
+- `extension.js` — panel indicator, popup UI, tile layout, and GNOME Shell integrations.
+- `system.js` — system settings and controls for networking, Bluetooth, brightness, notifications, and audio.
+- `media.js` — MPRIS player discovery and playback controls.
+- `prefs.js` and `schemas/` — extension preferences and their GSettings schema.
+- `stylesheet.css` — popup and tile styling.
 
 ## Contributing
 
-Bug reports and pull requests are welcome. Include your GNOME Shell version, Wayland/X11 session type, whether Blur my Shell is enabled, and relevant Shell logs.
+Bug reports and pull requests are welcome.
+
+When reporting a problem, include:
+
+- GNOME Shell version (`gnome-shell --version`)
+- Distribution and session type (Wayland or X11)
+- Whether Blur my Shell is installed and enabled
+- Whether Mirror or Caffeine is installed and enabled, if the issue involves either integration
+- Relevant GNOME Shell logs
+
+Please test changes on a real GNOME session and make sure objects, signal handlers, and GLib sources are cleaned up when the extension is disabled.
 
 ## Credits
 
-- [Blur my Shell](https://github.com/aunetx/blur-my-shell) — optional blur provider and documented per-surface integration.
-- macOS Control Center — visual reference.
+- [Blur my Shell](https://github.com/aunetx/blur-my-shell) — optional blur provider and per-surface integration reference.
+- macOS Control Center — visual design reference.
 
 ## License
 
-No license has been selected yet.
+No license has been selected for this repository yet. A license should be chosen before distributing the extension publicly. If code or assets from other projects are included, retain their required attribution and verify license compatibility.
