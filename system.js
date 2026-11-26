@@ -361,6 +361,14 @@ export class SystemController {
                 this._mixer,
                 this._mixer.connect('default-sink-changed', () => this._watchSink()),
             ]);
+            this._signals.push([
+                this._mixer,
+                this._mixer.connect('stream-added', () => this._watchSink()),
+            ]);
+            this._signals.push([
+                this._mixer,
+                this._mixer.connect('stream-removed', () => this._watchSink()),
+            ]);
             this._mixer.open();
         } catch (error) {
             logError(error, 'GVC audio control is unavailable');
