@@ -112,15 +112,21 @@ function makeMediaTile() {
     tile.set_size(LARGE_WIDTH, LARGE_HEIGHT);
     tile.y_align = Clutter.ActorAlign.START;
 
+    const header = new St.BoxLayout({
+        style_class: 'cc-media-header',
+    });
     const artwork = new St.Widget({style_class: 'cc-artwork'});
-    artwork.set_size(34, 34);
+    artwork.set_size(37, 37);
     artwork.add_child(icon('audio-x-generic-symbolic', 20, 'cc-artwork-icon'));
     const heading = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
+        y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-media-copy',
     });
     heading.add_child(label('Not Playing', 'cc-media-title'));
     heading.add_child(label('Your music', 'cc-subtitle'));
+    header.add_child(artwork);
+    header.add_child(heading);
     const spacer = new St.Widget({y_expand: true});
     const controls = new St.BoxLayout({
         x_expand: true,
@@ -129,8 +135,7 @@ function makeMediaTile() {
     });
     for (const name of ['media-skip-backward-symbolic', 'media-playback-start-symbolic', 'media-skip-forward-symbolic'])
         controls.add_child(icon(name, 16, 'cc-media-control-icon'));
-    tile.add_child(artwork);
-    tile.add_child(heading);
+    tile.add_child(header);
     tile.add_child(spacer);
     tile.add_child(controls);
     return tile;
