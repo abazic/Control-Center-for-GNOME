@@ -14,6 +14,9 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Focus / Do Not Disturb through `org.gnome.desktop.notifications` (`show-banners`).
 - Display brightness through GNOME Shell's `org.gnome.Shell.Brightness` D-Bus interface (GNOME 49+).
 - Output volume through GVC / the PulseAudio-compatible audio server, including PipeWire-Pulse.
+- MPRIS media controls for the active session player (previous, play/pause, next, title, and artist).
+- Airplane Mode coordination for Wi-Fi, Bluetooth, and WWAN when the modem exposes that control; the previous radio states are restored when disabling it.
+- Audio output switching through GVC; click the speaker shortcut to cycle through available output sinks.
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
 - GNOME Shell ES module extension structure.
@@ -87,9 +90,9 @@ gnome-shell --version
 - [x] Focus / Do Not Disturb through GSettings.
 - [x] Display brightness through GNOME Shell D-Bus (GNOME 49+).
 - [x] Output volume through GVC.
-- [ ] Airplane Mode coordination where supported.
-- [ ] MPRIS media controls.
-- [ ] Audio output selection.
+- [x] Airplane Mode coordination where supported (NetworkManager Wi-Fi/WWAN + BlueZ Bluetooth).
+- [x] MPRIS media controls (active player selection and metadata).
+- [x] Audio output switching through GVC (cycle available output sinks).
 - [ ] GNOME Settings shortcuts.
 
 ## Project structure
@@ -97,6 +100,8 @@ gnome-shell --version
 ```text
 .
 ├── extension.js
+├── system.js
+├── media.js
 ├── metadata.json
 ├── stylesheet.css
 ├── control-center-symbolic.svg
