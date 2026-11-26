@@ -70,6 +70,7 @@ export class SystemController {
         this._initNetworkManager();
         this._initBluetooth();
         this._initAudio();
+        this._emit();
     }
 
     get state() {
