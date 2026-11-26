@@ -6,113 +6,122 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-const PILL_CLASS = 'cc-pill bms-popup-blur-target';
+const SURFACE = 'cc-surface bms-popup-blur-target';
 
-function makeIcon(iconName, size = 20) {
-    return new St.Icon({
-        icon_name: iconName,
-        icon_size: size,
-        style_class: 'cc-pill-icon',
+function label(text, styleClass) {
+    return new St.Label({text, style_class: styleClass, x_expand: true});
+}
+
+function icon(name, size = 22, styleClass = 'cc-icon') {
+    return new St.Icon({icon_name: name, icon_size: size, style_class: styleClass});
+}
+
+function makeSurface(styleClass, vertical = false) {
+    return new St.BoxLayout({
+        orientation: vertical ? Clutter.Orientation.VERTICAL : Clutter.Orientation.HORIZONTAL,
+        x_expand: true,
+        style_class: `${SURFACE} ${styleClass}`,
     });
 }
 
-function makeLabel(text, styleClass) {
-    return new St.Label({
-        text,
+function makeWifiTile() {
+    const tile = makeSurface('cc-wifi-tile');
+    const symbol = new St.BoxLayout({style_class: 'cc-symbol-disc', y_align: Clutter.ActorAlign.CENTER});
+    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', 25));
+    const copy = new St.BoxLayout({
+        orientation: Clutter.Orientation.VERTICAL,
+        y_align: Clutter.ActorAlign.CENTER,
         x_expand: true,
-        style_class: styleClass,
+        style_class: 'cc-copy',
     });
+    copy.add_child(label('Wi-Fi', 'cc-title'));
+    copy.add_child(label('Home network · Preview', 'cc-subtitle'));
+    tile.add_child(symbol);
+    tile.add_child(copy);
+    return tile;
 }
 
-/* Every pill is an independent Blur my Shell surface. */
-function makePill({icon, title, subtitle, extraClass = ''}) {
-    const pill = new St.BoxLayout({
-        orientation: Clutter.Orientation.VERTICAL,
-        x_expand: true,
-        style_class: `${PILL_CLASS} ${extraClass}`.trim(),
+function makeCircle(name, accessibleName) {
+    const button = new St.Button({
+        reactive: false,
+        can_focus: false,
+        track_hover: false,
+        style_class: `${SURFACE} cc-round-control`,
+        accessible_name: accessibleName,
     });
-
-    const row = new St.BoxLayout({
-        orientation: Clutter.Orientation.HORIZONTAL,
-        x_expand: true,
-        y_align: Clutter.ActorAlign.CENTER,
-        style_class: 'cc-pill-header',
-    });
-    row.add_child(makeIcon(icon));
-
-    const labels = new St.BoxLayout({
-        orientation: Clutter.Orientation.VERTICAL,
-        x_expand: true,
-        y_align: Clutter.ActorAlign.CENTER,
-        style_class: 'cc-pill-labels',
-    });
-    labels.add_child(makeLabel(title, 'cc-pill-title'));
-    if (subtitle)
-        labels.add_child(makeLabel(subtitle, 'cc-pill-subtitle'));
-
-    row.add_child(labels);
-    pill.add_child(row);
-    return pill;
+    button.set_child(icon(name, 27));
+    return button;
 }
 
-function makeMediaPill() {
-    const pill = new St.BoxLayout({
+function makeFocusTile() {
+    const tile = makeSurface('cc-focus-tile');
+    const symbol = new St.BoxLayout({style_class: 'cc-symbol-disc', y_align: Clutter.ActorAlign.CENTER});
+    symbol.add_child(icon('weather-clear-night-symbolic', 23));
+    const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
-        x_expand: true,
-        style_class: `${PILL_CLASS} cc-media-pill`,
-    });
-
-    const header = new St.BoxLayout({
-        orientation: Clutter.Orientation.HORIZONTAL,
-        x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
-        style_class: 'cc-pill-header',
-    });
-    header.add_child(makeIcon('audio-x-generic-symbolic', 22));
-
-    const labels = new St.BoxLayout({
-        orientation: Clutter.Orientation.VERTICAL,
         x_expand: true,
-        style_class: 'cc-pill-labels',
+        style_class: 'cc-copy',
     });
-    labels.add_child(makeLabel('Not Playing', 'cc-pill-title'));
-    labels.add_child(makeLabel('Media controls preview', 'cc-pill-subtitle'));
-    header.add_child(labels);
-    pill.add_child(header);
+    copy.add_child(label('Focus', 'cc-title'));
+    copy.add_child(label('Do Not Disturb', 'cc-subtitle'));
+    tile.add_child(symbol);
+    tile.add_child(copy);
+    return tile;
+}
 
+function makeMediaTile() {
+    const tile = makeSurface('cc-media-tile', true);
+    const artwork = new St.Widget({style_class: 'cc-artwork'});
+    artwork.set_size(62, 62);
+    artwork.add_child(icon('audio-x-generic-symbolic', 30, 'cc-artwork-icon'));
+    const heading = new St.BoxLayout({
+        orientation: Clutter.Orientation.VERTICAL,
+        style_class: 'cc-media-copy',
+    });
+    heading.add_child(label('Not Playing', 'cc-media-title'));
+    heading.add_child(label('Your music will appear here', 'cc-subtitle'));
+    const spacer = new St.Widget({y_expand: true});
     const controls = new St.BoxLayout({
-        orientation: Clutter.Orientation.HORIZONTAL,
-        x_align: Clutter.ActorAlign.CENTER,
+        x_expand: true,
         style_class: 'cc-media-controls',
+        x_align: Clutter.ActorAlign.CENTER,
     });
-    for (const iconName of [
-        'media-skip-backward-symbolic',
-        'media-playback-start-symbolic',
-        'media-skip-forward-symbolic',
-    ]) {
-        controls.add_child(new St.Icon({
-            icon_name: iconName,
-            icon_size: 18,
-            style_class: 'cc-media-control-icon',
-        }));
-    }
-    pill.add_child(controls);
-    return pill;
+    for (const name of ['media-skip-backward-symbolic', 'media-playback-start-symbolic', 'media-skip-forward-symbolic'])
+        controls.add_child(icon(name, 22, 'cc-media-control-icon'));
+    tile.add_child(artwork);
+    tile.add_child(heading);
+    tile.add_child(spacer);
+    tile.add_child(controls);
+    return tile;
+}
+
+function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
+    const tile = makeSurface('cc-slider-tile', true);
+    const heading = new St.BoxLayout({x_expand: true, style_class: 'cc-slider-heading'});
+    heading.add_child(label(title, 'cc-slider-title'));
+    tile.add_child(heading);
+    const controls = new St.BoxLayout({
+        x_expand: true,
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: 'cc-slider-controls',
+    });
+    controls.add_child(icon(leadingIcon, 19));
+    const track = new St.Widget({x_expand: true, style_class: 'cc-slider-track'});
+    track.add_child(new St.Widget({style_class: `cc-slider-fill ${fillClass}`}));
+    controls.add_child(track);
+    controls.add_child(icon(trailingIcon, 19));
+    tile.add_child(controls);
+    return tile;
 }
 
 export default class ControlCenterExtension extends Extension {
     enable() {
-        console.debug(`${this.metadata.name}: enabling`);
-
-        // GNOME Shell automatically loads this extension's stylesheet.css
-        // and unloads it when the extension is disabled.
-
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
         this._indicator.add_child(new St.Icon({
             icon_name: 'view-grid-symbolic',
             style_class: 'system-status-icon',
         }));
-
         this._indicator.menu.actor.add_style_class_name('cc-control-center-menu');
         this._buildMenu();
         Main.panel.addToStatusArea(this.uuid, this._indicator);
@@ -124,73 +133,55 @@ export default class ControlCenterExtension extends Extension {
             can_focus: false,
             style_class: 'cc-menu-item',
         });
-
         const content = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL,
             style_class: 'cc-content',
         });
 
-        const connectivity = new St.BoxLayout({
-            orientation: Clutter.Orientation.HORIZONTAL,
-            style_class: 'cc-pill-row',
+        const composition = new St.BoxLayout({
+            style_class: 'cc-main-grid',
+            x_expand: true,
         });
-        connectivity.add_child(makePill({
-            icon: 'network-wireless-signal-excellent-symbolic',
-            title: 'Wi-Fi',
-            subtitle: 'Coming soon',
-        }));
-        connectivity.add_child(makePill({
-            icon: 'bluetooth-active-symbolic',
-            title: 'Bluetooth',
-            subtitle: 'Coming soon',
-        }));
-        content.add_child(connectivity);
-
-        content.add_child(makeMediaPill());
-
-        const modes = new St.BoxLayout({
-            orientation: Clutter.Orientation.HORIZONTAL,
-            style_class: 'cc-pill-row',
+        const left = new St.BoxLayout({
+            orientation: Clutter.Orientation.VERTICAL,
+            style_class: 'cc-left-column',
+            x_expand: true,
         });
-        modes.add_child(makePill({
-            icon: 'airplane-mode-symbolic',
-            title: 'Airplane Mode',
-            subtitle: 'Coming soon',
-        }));
-        modes.add_child(makePill({
-            icon: 'weather-clear-night-symbolic',
-            title: 'Focus',
-            subtitle: 'Do Not Disturb',
-        }));
-        content.add_child(modes);
+        left.add_child(makeWifiTile());
 
-        content.add_child(makePill({
-            icon: 'display-brightness-symbolic',
-            title: 'Display',
-            subtitle: 'Brightness control coming soon',
-            extraClass: 'cc-wide-pill',
-        }));
-        content.add_child(makePill({
-            icon: 'audio-volume-high-symbolic',
-            title: 'Sound',
-            subtitle: 'Volume control coming soon',
-            extraClass: 'cc-wide-pill',
-        }));
+        const connectivity = new St.BoxLayout({style_class: 'cc-circle-row'});
+        connectivity.add_child(makeCircle('bluetooth-active-symbolic', 'Bluetooth'));
+        connectivity.add_child(makeCircle('radio-symbolic', 'Nearby devices'));
+        left.add_child(connectivity);
+        left.add_child(makeFocusTile());
 
-        const footer = new St.BoxLayout({
-            x_align: Clutter.ActorAlign.CENTER,
-            style_class: 'cc-footer',
+        composition.add_child(left);
+        composition.add_child(makeMediaTile());
+        content.add_child(composition);
+
+        content.add_child(makeSliderTile(
+            'Display', 'display-brightness-symbolic', 'weather-clear-symbolic', 'cc-brightness-fill'));
+        content.add_child(makeSliderTile(
+            'Sound', 'audio-volume-low-symbolic', 'audio-volume-high-symbolic', 'cc-volume-fill'));
+
+        const shortcuts = new St.BoxLayout({
+            style_class: 'cc-shortcuts',
+            x_expand: true,
         });
-        footer.add_child(makeLabel('CONTROL CENTER  ·  PREVIEW', 'cc-footer-label'));
-        content.add_child(footer);
+        for (const [name, accessibleName] of [
+            ['contrast-symbolic', 'Appearance'],
+            ['accessories-calculator-symbolic', 'Calculator'],
+            ['preferences-system-time-symbolic', 'Timer'],
+            ['camera-photo-symbolic', 'Screenshot'],
+        ])
+            shortcuts.add_child(makeCircle(name, accessibleName));
+        content.add_child(shortcuts);
 
         item.add_child(content);
         this._indicator.menu.addMenuItem(item);
     }
 
     disable() {
-        console.debug(`${this.metadata.name}: disabling`);
-
         this._indicator?.destroy();
         this._indicator = null;
     }
