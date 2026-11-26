@@ -246,7 +246,7 @@ export default class ControlCenterExtension extends Extension {
             reactive: false,
             can_focus: false,
             track_hover: false,
-            style_class: 'cc-edit-control-button',
+            style_class: `${SURFACE} cc-edit-control-button`,
             accessible_name: 'Edit Control',
         });
         editControlButton.set_size(86, 21);
