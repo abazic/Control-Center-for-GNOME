@@ -107,6 +107,20 @@ function collectMenuEntries(menu, entries = []) {
     return entries;
 }
 
+// Ikon media solid, ditanam langsung agar tidak bergantung pada tema ikon.
+const MEDIA_SHAPES = {
+    previous: 'M11.5 5v14L2 12zM22 5v14l-9.5-7z',
+    play: 'M6 3.5v17L20.5 12z',
+    pause: 'M5.5 4h4.5v16H5.5zM14 4h4.5v16H14z',
+    next: 'M2 5l9.5 7L2 19zM12.5 5L22 12l-9.5 7z',
+};
+
+function mediaGicon(shape) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
+        `<path fill="#ffffff" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" d="${MEDIA_SHAPES[shape]}"/></svg>`;
+    return Gio.BytesIcon.new(new GLib.Bytes(new TextEncoder().encode(svg)));
+}
+
 function label(text, styleClass) {
     return new St.Label({text, style_class: styleClass, x_expand: true});
 }
@@ -308,7 +322,7 @@ function makeMediaTile(onPrevious, onPlayPause, onNext) {
         style_class: 'cc-media-controls',
         x_align: Clutter.ActorAlign.CENTER,
     });
-    const makeMediaButton = (name, accessibleName, callback) => {
+    const makeMediaButton = (shape, size, accessibleName, callback) => {
         const button = new St.Button({
             reactive: true,
             can_focus: true,
@@ -316,17 +330,17 @@ function makeMediaTile(onPrevious, onPlayPause, onNext) {
             style_class: 'cc-media-control-button',
             accessible_name: accessibleName,
         });
-        button._ccIcon = icon(name, 16, 'cc-media-control-icon');
+        button._ccIcon = new St.Icon({gicon: mediaGicon(shape), icon_size: size});
         button.set_child(button._ccIcon);
         button.connect('clicked', callback);
         return button;
     };
     const previousButton = makeMediaButton(
-        'media-skip-backward-symbolic', 'Previous track', onPrevious);
+        'previous', 22, 'Previous track', onPrevious);
     const playButton = makeMediaButton(
-        'media-playback-start-symbolic', 'Play or pause', onPlayPause);
+        'play', 24, 'Play or pause', onPlayPause);
     const nextButton = makeMediaButton(
-        'media-skip-forward-symbolic', 'Next track', onNext);
+        'next', 22, 'Next track', onNext);
     controls.add_child(previousButton);
     controls.add_child(playButton);
     controls.add_child(nextButton);
@@ -987,10 +1001,8 @@ export default class ControlCenterExtension extends Extension {
         this._mediaTile._ccArtistLabel.text = state.artist;
         const playIcon = this._mediaTile._ccPlayButton._ccIcon;
         const playing = state.playbackStatus === 'Playing';
-        if (playIcon) {
-            playIcon.icon_name = playing
-                ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
-        }
+        if (playIcon)
+            playIcon.gicon = mediaGicon(playing ? 'pause' : 'play');
         this._mediaTile._ccPlayButton.accessible_name = playing ? 'Pause' : 'Play';
         const canTogglePlayback = state.canPlay || state.canPause;
         this._mediaTile._ccPlayButton.reactive = canTogglePlayback;
