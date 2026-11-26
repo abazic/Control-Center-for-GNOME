@@ -429,6 +429,7 @@ export default class ControlCenterExtension extends Extension {
         this._menuStateSignal = this._indicator.menu.connect(
             'open-state-changed',
             (menu, isOpen) => {
+                this._watchExtraToggles(isOpen);
                 if (isOpen)
                     this._indicator?.add_style_class_name('cc-active');
                 else {
@@ -700,6 +701,10 @@ export default class ControlCenterExtension extends Extension {
             }
             return {actor, size};
         });
+        for (const {actor} of this._extraTiles ?? []) {
+            styleTile(actor, 'small');
+            tiles.push({actor, size: 'small'});
+        }
         placeTiles(this._grid, tiles);
     }
 
@@ -850,6 +855,82 @@ export default class ControlCenterExtension extends Extension {
             Main.panel.statusArea.quickSettings?._powerProfiles?.quickSettingsItems?.[0]);
     }
 
+    // Toggle Quick Settings yang belum punya tile khusus.
+    _findExtraToggles() {
+        const quickSettings = Main.panel.statusArea.quickSettings;
+        const handled = new Set([
+            quickSettings?._network?._wirelessToggle,
+            quickSettings?._bluetooth?.quickSettingsItems?.[0],
+            quickSettings?._powerProfiles?.quickSettingsItems?.[0],
+            quickSettings?._doNotDisturb?.quickSettingsItems?.[0],
+            quickSettings?._rfkill?.quickSettingsItems?.[0],
+            quickSettings?._backgroundApps?.quickSettingsItems?.[0],
+            Main.extensionManager.lookup(CAFFEINE_UUID)?.stateObj
+                ?._caffeineIndicator?.quickSettingsItems?.[0],
+            Main.extensionManager.lookup(MIRROR_UUID)?.stateObj
+                ?._indicator?.quickSettingsItems?.[0],
+        ]);
+        const items = quickSettings?.menu?._grid?.get_children() ?? [];
+        return items.filter(item => item.visible && 'checked' in item &&
+            item.title && !handled.has(item));
+    }
+
+    _syncExtraTiles() {
+        if (this._destroying || !this._grid)
+            return;
+
+        const toggles = this._findExtraToggles();
+        const current = this._extraTiles ?? [];
+        const changed = toggles.length !== current.length ||
+            toggles.some((toggle, i) => current[i].toggle !== toggle);
+
+        if (changed) {
+            for (const {actor} of current)
+                actor.destroy();
+            this._extraTiles = toggles.map(toggle => {
+                const actor = makeCircle('application-x-addon-symbolic', toggle.title,
+                    () => this._activateToggle(toggle),
+                    () => {
+                        if (toggle.menu && toggle.menuEnabled !== false)
+                            this._showMenuOverlay(toggle.title, toggle);
+                    });
+                this._grid.add_child(actor);
+                return {actor, toggle};
+            });
+            this._applyAllTileSizes();
+        }
+
+        for (const {actor, toggle} of this._extraTiles) {
+            if (toggle.gicon)
+                actor._ccIcon.gicon = toggle.gicon;
+            else if (toggle.icon_name)
+                actor._ccIcon.icon_name = toggle.icon_name;
+            actor.accessible_name = toggle.title;
+            setControlActive(actor, toggle.checked);
+        }
+    }
+
+    _activateToggle(toggle) {
+        // Sama seperti St.Button: toggle-mode membalik state sebelum 'clicked'.
+        if (toggle.toggle_mode)
+            toggle.checked = !toggle.checked;
+        toggle.emit('clicked', 1);
+        this._syncExtraTiles();
+    }
+
+    _watchExtraToggles(isOpen) {
+        if (this._extraSource)
+            GLib.Source.remove(this._extraSource);
+        this._extraSource = 0;
+        if (!isOpen)
+            return;
+        this._syncExtraTiles();
+        this._extraSource = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+            this._syncExtraTiles();
+            return GLib.SOURCE_CONTINUE;
+        });
+    }
+
     _openPreferences() {
         this._indicator?.menu.close();
         Main.extensionManager.openExtensionPrefs(this.uuid, '', {});
@@ -931,6 +1012,8 @@ export default class ControlCenterExtension extends Extension {
     disable() {
         this._destroying = true;
         this._closeMenuOverlay();
+        this._watchExtraToggles(false);
+        this._extraTiles = [];
         if (this._settings && this._hideQuickSettingsSignal)
             this._settings.disconnect(this._hideQuickSettingsSignal);
         this._hideQuickSettingsSignal = 0;
