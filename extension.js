@@ -19,7 +19,7 @@ function icon(name, size = 22, styleClass = 'cc-icon') {
 function makeSurface(styleClass, vertical = false) {
     return new St.BoxLayout({
         orientation: vertical ? Clutter.Orientation.VERTICAL : Clutter.Orientation.HORIZONTAL,
-        x_expand: true,
+        x_expand: false,
         style_class: `${SURFACE} ${styleClass}`,
     });
 }
@@ -27,7 +27,7 @@ function makeSurface(styleClass, vertical = false) {
 function makeWifiTile() {
     const tile = makeSurface('cc-wifi-tile');
     const symbol = new St.BoxLayout({style_class: 'cc-symbol-disc', y_align: Clutter.ActorAlign.CENTER});
-    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', 25));
+    symbol.add_child(icon('network-wireless-signal-excellent-symbolic', 21));
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -35,7 +35,7 @@ function makeWifiTile() {
         style_class: 'cc-copy',
     });
     copy.add_child(label('Wi-Fi', 'cc-title'));
-    copy.add_child(label('Home network · Preview', 'cc-subtitle'));
+    copy.add_child(label('Connected', 'cc-subtitle'));
     tile.add_child(symbol);
     tile.add_child(copy);
     return tile;
@@ -49,14 +49,14 @@ function makeCircle(name, accessibleName) {
         style_class: `${SURFACE} cc-round-control`,
         accessible_name: accessibleName,
     });
-    button.set_child(icon(name, 27));
+    button.set_child(icon(name, 25));
     return button;
 }
 
 function makeFocusTile() {
     const tile = makeSurface('cc-focus-tile');
     const symbol = new St.BoxLayout({style_class: 'cc-symbol-disc', y_align: Clutter.ActorAlign.CENTER});
-    symbol.add_child(icon('weather-clear-night-symbolic', 23));
+    symbol.add_child(icon('weather-clear-night-symbolic', 20));
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -73,14 +73,14 @@ function makeFocusTile() {
 function makeMediaTile() {
     const tile = makeSurface('cc-media-tile', true);
     const artwork = new St.Widget({style_class: 'cc-artwork'});
-    artwork.set_size(62, 62);
-    artwork.add_child(icon('audio-x-generic-symbolic', 30, 'cc-artwork-icon'));
+    artwork.set_size(34, 34);
+    artwork.add_child(icon('audio-x-generic-symbolic', 20, 'cc-artwork-icon'));
     const heading = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         style_class: 'cc-media-copy',
     });
     heading.add_child(label('Not Playing', 'cc-media-title'));
-    heading.add_child(label('Your music will appear here', 'cc-subtitle'));
+    heading.add_child(label('Your music', 'cc-subtitle'));
     const spacer = new St.Widget({y_expand: true});
     const controls = new St.BoxLayout({
         x_expand: true,
@@ -88,7 +88,7 @@ function makeMediaTile() {
         x_align: Clutter.ActorAlign.CENTER,
     });
     for (const name of ['media-skip-backward-symbolic', 'media-playback-start-symbolic', 'media-skip-forward-symbolic'])
-        controls.add_child(icon(name, 22, 'cc-media-control-icon'));
+        controls.add_child(icon(name, 16, 'cc-media-control-icon'));
     tile.add_child(artwork);
     tile.add_child(heading);
     tile.add_child(spacer);
@@ -97,7 +97,11 @@ function makeMediaTile() {
 }
 
 function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
-    const tile = makeSurface('cc-slider-tile', true);
+    const tile = new St.BoxLayout({
+        orientation: Clutter.Orientation.VERTICAL,
+        x_expand: true,
+        style_class: `${SURFACE} cc-slider-tile`,
+    });
     const heading = new St.BoxLayout({x_expand: true, style_class: 'cc-slider-heading'});
     heading.add_child(label(title, 'cc-slider-title'));
     tile.add_child(heading);
@@ -106,11 +110,11 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass) {
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-slider-controls',
     });
-    controls.add_child(icon(leadingIcon, 19));
+    controls.add_child(icon(leadingIcon, 17));
     const track = new St.Widget({x_expand: true, style_class: 'cc-slider-track'});
     track.add_child(new St.Widget({style_class: `cc-slider-fill ${fillClass}`}));
     controls.add_child(track);
-    controls.add_child(icon(trailingIcon, 19));
+    controls.add_child(icon(trailingIcon, 17));
     tile.add_child(controls);
     return tile;
 }
@@ -145,7 +149,7 @@ export default class ControlCenterExtension extends Extension {
         const left = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL,
             style_class: 'cc-left-column',
-            x_expand: true,
+            x_expand: false,
         });
         left.add_child(makeWifiTile());
 
