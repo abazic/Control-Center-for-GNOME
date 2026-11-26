@@ -11,5 +11,6 @@
     "50",
     "51"
   ],
-  "url": "https://github.com/abazic/Control-Center-for-GNOME"
+  "url": "https://github.com/abazic/Control-Center-for-GNOME",
+  "settings-schema": "org.gnome.shell.extensions.control-center"
 }
