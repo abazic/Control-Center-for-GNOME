@@ -647,10 +647,8 @@ export default class ControlCenterExtension extends Extension {
                 }
 
                 this._nativeQuickSettings = quickSettings;
-                if (this._settings?.get_boolean('hide-native-quick-settings'))
-                    container.hide();
-                else
-                    container.show();
+                this._setQuickSettingsLocked(quickSettings,
+                    this._settings?.get_boolean('hide-native-quick-settings'));
                 this._quickSettingsSource = 0;
                 return GLib.SOURCE_REMOVE;
             }
@@ -719,10 +717,33 @@ export default class ControlCenterExtension extends Extension {
         }
 
         this._nativeQuickSettings = quickSettings;
-        if (this._settings?.get_boolean('hide-native-quick-settings'))
-            container.hide();
-        else
-            container.show();
+        this._setQuickSettingsLocked(quickSettings,
+            this._settings?.get_boolean('hide-native-quick-settings'));
+    }
+
+    // Ikon tetap tampil di panel, tetapi popup-nya tidak bisa dibuka.
+    _setQuickSettingsLocked(quickSettings, locked) {
+        quickSettings.container.show();
+        quickSettings.reactive = !locked;
+        quickSettings.can_focus = !locked;
+        quickSettings.track_hover = !locked;
+
+        if (this._lockSignal) {
+            this._lockedMenu.disconnect(this._lockSignal);
+            this._lockSignal = 0;
+            this._lockedMenu = null;
+        }
+        if (!locked)
+            return;
+
+        quickSettings.menu.close();
+        // Menahan juga pembukaan lewat pintasan keyboard (Super+S).
+        this._lockedMenu = quickSettings.menu;
+        this._lockSignal = this._lockedMenu.connect('open-state-changed',
+            (menu, isOpen) => {
+                if (isOpen)
+                    menu.close();
+            });
     }
 
     _restoreNativeQuickSettings() {
@@ -731,7 +752,8 @@ export default class ControlCenterExtension extends Extension {
             this._quickSettingsSource = 0;
         }
 
-        this._nativeQuickSettings?.container?.show();
+        if (this._nativeQuickSettings)
+            this._setQuickSettingsLocked(this._nativeQuickSettings, false);
         this._nativeQuickSettings = null;
     }
 
