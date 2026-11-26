@@ -294,11 +294,21 @@ export default class ControlCenterExtension extends Extension {
             this._syncSystemState();
         });
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
+        this._indicator.add_style_class_name('cc-indicator');
         this._indicator.add_child(new St.Icon({
             gicon: new Gio.FileIcon({file: this.dir.get_child('control-center-symbolic.svg')}),
             icon_size: 22,
             style_class: 'system-status-icon',
         }));
+        this._menuStateSignal = this._indicator.menu.connect(
+            'open-state-changed',
+            (menu, isOpen) => {
+                if (isOpen)
+                    this._indicator?.add_style_class_name('cc-active');
+                else
+                    this._indicator?.remove_style_class_name('cc-active');
+            }
+        );
         this._indicator.menu.actor.add_style_class_name('cc-control-center-menu');
         this._buildMenu();
         Main.panel.addToStatusArea(this.uuid, this._indicator);
@@ -673,6 +683,9 @@ export default class ControlCenterExtension extends Extension {
         this._mediaController = null;
         this._controller?.destroy();
         this._controller = null;
+        if (this._indicator && this._menuStateSignal)
+            this._indicator.menu.disconnect(this._menuStateSignal);
+        this._menuStateSignal = 0;
         this._indicator?.destroy();
         this._indicator = null;
     }
