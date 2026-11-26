@@ -202,7 +202,7 @@ function makeMediaTile(onPrevious, onPlayPause, onNext) {
     return tile;
 }
 
-function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChanged = null, initialValue = 0.72) {
+function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChanged = null, initialValue = 0.72, trailingAction = null) {
     const tile = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         x_expand: true,
@@ -251,7 +251,20 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
     fill.set_style(`width: ${initialValue * 100}%;`);
     tile._ccSetValue = value => fill.set_style(`width: ${Math.max(0, Math.min(1, value)) * 100}%;`);
     controls.add_child(track);
-    controls.add_child(icon(trailingIcon, 15, 'cc-slider-icon'));
+    if (trailingAction) {
+        const trailingButton = new St.Button({
+            reactive: true,
+            can_focus: true,
+            style_class: 'cc-slider-icon-button',
+            accessible_name: 'Toggle mute',
+        });
+        trailingButton.set_child(icon(trailingIcon, 15, 'cc-slider-icon'));
+        trailingButton.connect('clicked', trailingAction);
+        tile._ccTrailingButton = trailingButton;
+        controls.add_child(trailingButton);
+    } else {
+        controls.add_child(icon(trailingIcon, 15, 'cc-slider-icon'));
+    }
     tile.add_child(controls);
     return tile;
 }
@@ -342,7 +355,8 @@ export default class ControlCenterExtension extends Extension {
         content.add_child(this._brightnessTile);
         this._volumeTile = makeSliderTile(
             'Sound', 'audio-volume-low-symbolic', 'audio-volume-high-symbolic', 'cc-volume-fill',
-            value => this._controller.setVolume(value), 0.72);
+            value => this._controller.setVolume(value), 0.72,
+            () => this._controller.toggleMute());
         content.add_child(this._volumeTile);
 
         const shortcuts = new St.BoxLayout({
@@ -435,8 +449,13 @@ export default class ControlCenterExtension extends Extension {
         if (this._brightnessTile && state.brightnessAvailable)
             this._brightnessTile._ccSetValue(state.brightness);
 
-        if (this._volumeTile && state.audioAvailable)
+        if (this._volumeTile && state.audioAvailable) {
             this._volumeTile._ccSetValue(state.volume);
+            const muteIcon = this._volumeTile._ccTrailingButton?.get_child();
+            if (muteIcon)
+                muteIcon.icon_name = state.muted
+                    ? 'audio-volume-muted-symbolic' : 'audio-volume-high-symbolic';
+        }
     }
 
     _syncMediaState() {
