@@ -2,7 +2,7 @@
 
 A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pills.
 
-> **Status:** Native integration in progress. The existing popup layout and stylesheet are preserved. Wi-Fi, Bluetooth, Do Not Disturb, display brightness (GNOME Shell 49+), and output volume are connected to system services. Runtime verification is still required on a real GNOME 51 Wayland session.
+> **Status:** Custom Control Center replacement UI implemented; GNOME 51.1 runtime verification is still pending. Wi-Fi, Bluetooth, Do Not Disturb, display brightness (GNOME Shell 49+), and output volume are connected to system services.
 
 ## What is implemented
 
@@ -20,8 +20,9 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Mirror shortcut opens the device list from the optional `Mirror` GNOME extension (`mirror@distro.com`).
 - Timer shortcut opens the optional `Caffeine` GNOME extension's timer menu (`caffeine@patapon.info`); its active state is reflected in the Control Center.
 - Control Center is the primary replacement interface: its custom macOS-inspired controls operate the same GNOME system services as native Quick Settings (NetworkManager, BlueZ, GNOME notification settings, GNOME Shell brightness, and GVC audio). This keeps system state synchronized without displaying duplicate native controls.
-- The native Quick Settings panel indicator is hidden while Control Center is enabled and restored when the extension is disabled. Native GNOME actors are not reparented or modified.
-- Control Center tile sizing is configurable in Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square).
+- The native GNOME Quick Settings panel indicator is hidden while this extension is enabled and restored when it is disabled. The native Quick Settings grid is not reparented, modified, or shown inside the custom popup.
+- System actions are routed through the underlying GNOME services rather than copied native Quick Settings actors. This is intended to keep the custom controls aligned with system state while avoiding duplicate tiles.
+- The tile-size preference is available in the extension Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square). This size selector changes the custom Wi-Fi and Focus tiles; the other shortcut circles, media tile, and sliders retain their own layout dimensions.
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
 - GNOME Shell ES module extension structure.
@@ -48,6 +49,12 @@ Install and enable each upstream extension separately. If an extension is missin
 ## Compatibility
 
 The metadata allows GNOME Shell 45–51. The primary development target is **GNOME Shell 51.1 on CachyOS / Wayland**. Some integrations are version- or service-dependent: the Shell brightness D-Bus interface is available on GNOME 49 and later, while Wi-Fi, Bluetooth, Do Not Disturb, and audio depend on NetworkManager, BlueZ, the GNOME notification schema, and GVC respectively. This compatibility range is not a claim that every version has been runtime-tested.
+
+### Replacement behavior and current limitations
+
+- Hiding the native Quick Settings panel indicator removes the normal panel entry point while the extension is active. It does not yet guarantee that every GNOME keyboard shortcut or other Shell entry point that opens native Quick Settings is intercepted.
+- Native Quick Settings tiles supplied by unrelated third-party extensions are not automatically imported into this custom interface. Optional Mirror and Caffeine integrations are handled separately by their dedicated shortcuts.
+- System-state synchronization is implemented through listeners to the relevant system services, but two-way behavior still needs runtime verification on the target GNOME session.
 
 ## Install from source
 
@@ -93,7 +100,7 @@ gnome-shell --version
 - [x] Assign a separate Blur my Shell target to every pill.
 - [x] Add transparent popup shell and translucent pill fallback.
 - [ ] Verify install, enable, and popup rendering on real GNOME sessions.
-- [ ] Runtime-test native Quick Settings indicator hiding/restoration and two-way system-state synchronization on GNOME 51.
+- [ ] Runtime-test native Quick Settings indicator hiding/restoration, keyboard-shortcut behavior, and two-way system-state synchronization on GNOME 51.
 - [ ] Tune layout against the supplied macOS Control Center reference.
 - [ ] Add hover, pressed, active, and disabled visual states.
 - [ ] Add responsive sizing and light/dark appearance handling.
