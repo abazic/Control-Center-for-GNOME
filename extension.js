@@ -449,8 +449,10 @@ export default class ControlCenterExtension extends Extension {
         if (this._brightnessTile && state.brightnessAvailable)
             this._brightnessTile._ccSetValue(state.brightness);
 
-        if (this._volumeTile && state.audioAvailable) {
-            this._volumeTile._ccSetValue(state.volume);
+        if (this._volumeTile) {
+            this._volumeTile._ccTrailingButton.reactive = state.audioAvailable;
+            if (state.audioAvailable)
+                this._volumeTile._ccSetValue(state.volume);
             const muteIcon = this._volumeTile._ccTrailingButton?.get_child();
             if (muteIcon)
                 muteIcon.icon_name = state.muted
