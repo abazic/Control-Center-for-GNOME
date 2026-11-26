@@ -8,7 +8,8 @@ const PLAYER_PATH = '/org/mpris/MediaPlayer2';
 const PLAYER_IFACE = 'org.mpris.MediaPlayer2.Player';
 
 function unpack(value) {
-    return value ? value.deep_unpack() : null;
+    return value && typeof value.deep_unpack === 'function'
+        ? value.deep_unpack() : (value ?? null);
 }
 
 function callPlayer(proxy, method) {
@@ -45,6 +46,7 @@ export class MediaController {
             canGoNext: false,
             canGoPrevious: false,
             canPlay: false,
+            canPause: false,
             playerName: '',
         };
         this._nameSignal = this._connection.signal_subscribe(
@@ -151,11 +153,13 @@ export class MediaController {
             available: true,
             title: typeof title === 'string' && title ? title : 'Unknown track',
             artist: Array.isArray(artists) && artists.length
-                ? artists.join(', ') : (identity || 'Media player'),
+                ? artists.join(', ') : (typeof artists === 'string' && artists
+                    ? artists : (identity || this._activeBusName?.replace('org.mpris.MediaPlayer2.', '') || 'Media player')),
             playbackStatus: unpack(this._proxy.get_cached_property('PlaybackStatus')) || 'Stopped',
             canGoNext: Boolean(unpack(this._proxy.get_cached_property('CanGoNext'))),
             canGoPrevious: Boolean(unpack(this._proxy.get_cached_property('CanGoPrevious'))),
             canPlay: Boolean(unpack(this._proxy.get_cached_property('CanPlay'))),
+            canPause: Boolean(unpack(this._proxy.get_cached_property('CanPause'))),
             playerName: identity || '',
         };
         this._emit();
@@ -167,7 +171,7 @@ export class MediaController {
     }
 
     playPause() {
-        if (this._state.canPlay)
+        if (this._state.canPlay || this._state.canPause)
             callPlayer(this._proxy, 'PlayPause');
     }
 
