@@ -194,6 +194,8 @@ function makeMediaTile(onPrevious, onPlayPause, onNext) {
     tile._ccTitleLabel = titleLabel;
     tile._ccArtistLabel = artistLabel;
     tile._ccPlayButton = playButton;
+    tile._ccPreviousButton = previousButton;
+    tile._ccNextButton = nextButton;
     tile.add_child(header);
     tile.add_child(spacer);
     tile.add_child(controls);
@@ -450,6 +452,10 @@ export default class ControlCenterExtension extends Extension {
         this._mediaTile._ccPlayButton.accessible_name = playing ? 'Pause' : 'Play';
         this._mediaTile._ccPlayButton.reactive = state.canPlay;
         this._mediaTile._ccPlayButton.opacity = state.canPlay ? 255 : 110;
+        this._mediaTile._ccPreviousButton.reactive = state.canGoPrevious;
+        this._mediaTile._ccPreviousButton.opacity = state.canGoPrevious ? 255 : 110;
+        this._mediaTile._ccNextButton.reactive = state.canGoNext;
+        this._mediaTile._ccNextButton.opacity = state.canGoNext ? 255 : 110;
     }
 
     disable() {
