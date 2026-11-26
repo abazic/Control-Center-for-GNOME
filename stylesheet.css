@@ -274,15 +274,25 @@
 }
 
 
-/* Native GNOME Quick Settings tiles hosted inside Control Center. */
+/* Native GNOME Quick Settings tiles hosted inside Control Center.
+ * Keep the same geometry as the custom controls above:
+ * Small = 60×60 circle; Medium = 130×60 pill; Large = 130×130 square.
+ * Sliders remain full-width controls and are sized independently.
+ */
 .cc-native-quick-settings {
     width: 270px;
-    spacing: 8px;
+    spacing: 10px;
 }
 
 .cc-native-quick-settings.quick-settings-size-small .quick-toggle {
-    min-height: 42px;
-    padding: 4px 7px;
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+    padding: 4px;
+    border-radius: 30px;
 }
 
 .cc-native-quick-settings.quick-settings-size-small .quick-slider {
@@ -290,8 +300,14 @@
 }
 
 .cc-native-quick-settings.quick-settings-size-medium .quick-toggle {
-    min-height: 54px;
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
     padding: 7px 10px;
+    border-radius: 30px;
 }
 
 .cc-native-quick-settings.quick-settings-size-medium .quick-slider {
@@ -299,8 +315,14 @@
 }
 
 .cc-native-quick-settings.quick-settings-size-large .quick-toggle {
-    min-height: 68px;
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+    height: 130px;
+    min-height: 130px;
+    max-height: 130px;
     padding: 10px 12px;
+    border-radius: 30px;
 }
 
 .cc-native-quick-settings.quick-settings-size-large .quick-slider {
