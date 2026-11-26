@@ -455,7 +455,22 @@ export default class ControlCenterExtension extends Extension {
         this._indicator.menu.actor.add_style_class_name('cc-control-center-menu');
         this._buildMenu();
         Main.panel.addToStatusArea(this.uuid, this._indicator);
+        this._placeAfterQuickSettings();
         this._queueQuickSettingsIntegration();
+    }
+
+    // Posisi default: tepat di sebelah kanan ikon Quick Settings.
+    _placeAfterQuickSettings() {
+        const anchor = Main.panel.statusArea.quickSettings?.container;
+        const box = anchor?.get_parent();
+        const {container} = this._indicator;
+        if (!box)
+            return;
+        if (container.get_parent() !== box) {
+            container.get_parent()?.remove_child(container);
+            box.add_child(container);
+        }
+        box.set_child_above_sibling(container, anchor);
     }
 
     _buildMenu() {
