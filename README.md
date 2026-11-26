@@ -2,13 +2,18 @@
 
 A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pills.
 
-> **Status:** Front-end MVP scaffold. The panel indicator and popup UI are implemented in source. Runtime behavior still needs testing on a real GNOME session. System controls are visual placeholders.
+> **Status:** Native integration in progress. The existing popup layout and stylesheet are preserved. Wi-Fi, Bluetooth, Do Not Disturb, display brightness (GNOME Shell 49+), and output volume are connected to system services. Runtime verification is still required on a real GNOME 51 Wayland session.
 
 ## What is implemented
 
 - Panel indicator to open the Control Center.
 - macOS-inspired compact popup layout.
-- Separate pill surfaces for Wi-Fi, Bluetooth, media, Airplane Mode, Focus, Display, and Sound.
+- Separate pill surfaces for Wi-Fi, Bluetooth, media, Focus, Display, and Sound.
+- Wi-Fi enable/disable through NetworkManager D-Bus.
+- Bluetooth power through the BlueZ Adapter1 D-Bus API.
+- Focus / Do Not Disturb through `org.gnome.desktop.notifications` (`show-banners`).
+- Display brightness through GNOME Shell's `org.gnome.Shell.Brightness` D-Bus interface (GNOME 49+).
+- Output volume through GVC / the PulseAudio-compatible audio server, including PipeWire-Pulse.
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
 - GNOME Shell ES module extension structure.
@@ -25,7 +30,7 @@ Official reference: [Blur my Shell extension integration guide](https://github.c
 
 ## Compatibility
 
-The metadata currently allows installation on GNOME Shell 45–50. This is an initial compatibility range to avoid blocking installation on common ES-module-based GNOME releases; it is **not a claim that every version has been runtime-tested**. The initial development target remains GNOME Shell 49.
+The metadata allows GNOME Shell 45–51. The primary development target is **GNOME Shell 51.1 on CachyOS / Wayland**. Some integrations are version- or service-dependent: the Shell brightness D-Bus interface is available on GNOME 49 and later, while Wi-Fi, Bluetooth, Do Not Disturb, and audio depend on NetworkManager, BlueZ, the GNOME notification schema, and GVC respectively. This compatibility range is not a claim that every version has been runtime-tested.
 
 ## Install from source
 
@@ -77,12 +82,14 @@ gnome-shell --version
 
 ### System integrations
 
-- [ ] Wi-Fi and Bluetooth state/actions.
-- [ ] Airplane Mode where supported.
+- [x] Wi-Fi state/actions through NetworkManager.
+- [x] Bluetooth power/state through BlueZ.
+- [x] Focus / Do Not Disturb through GSettings.
+- [x] Display brightness through GNOME Shell D-Bus (GNOME 49+).
+- [x] Output volume through GVC.
+- [ ] Airplane Mode coordination where supported.
 - [ ] MPRIS media controls.
-- [ ] Focus / Do Not Disturb.
-- [ ] Display brightness.
-- [ ] Sound volume and output selection.
+- [ ] Audio output selection.
 - [ ] GNOME Settings shortcuts.
 
 ## Project structure
