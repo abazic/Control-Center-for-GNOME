@@ -117,9 +117,15 @@ function makeMediaTile() {
         x_align: Clutter.ActorAlign.START,
         style_class: 'cc-media-header',
     });
-    const artwork = new St.Widget({style_class: 'cc-artwork'});
+    const artwork = new St.Widget({
+        layout_manager: new Clutter.BinLayout(),
+        style_class: 'cc-artwork',
+    });
     artwork.set_size(37, 37);
-    artwork.add_child(icon('audio-x-generic-symbolic', 20, 'cc-artwork-icon'));
+    const artworkIcon = icon('audio-x-generic-symbolic', 20, 'cc-artwork-icon');
+    artworkIcon.set_x_align(Clutter.ActorAlign.CENTER);
+    artworkIcon.set_y_align(Clutter.ActorAlign.CENTER);
+    artwork.add_child(artworkIcon);
     const heading = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
         y_align: Clutter.ActorAlign.CENTER,
