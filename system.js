@@ -57,6 +57,10 @@ export class SystemController {
             brightness: 0.65,
             wifiAvailable: false,
             wifiEnabled: false,
+            wwanAvailable: false,
+            wwanEnabled: false,
+            airplaneAvailable: false,
+            airplaneEnabled: false,
             bluetoothAvailable: false,
             bluetoothEnabled: false,
             focusEnabled: false,
@@ -170,13 +174,17 @@ export class SystemController {
             );
 
             this._state.wifiAvailable = true;
+            this._state.airplaneAvailable = true;
             this._refreshWifi();
             this._signals.push([
                 this._network,
                 this._network.connect('g-properties-changed', () => {
                     this._refreshWifi();
+                    this._refreshWwan();
+                    this._refreshAirplane();
                 }),
             ]);
+            this._refreshWwan();
         } catch (error) {
             logError(error, 'NetworkManager is unavailable');
         }
@@ -193,6 +201,54 @@ export class SystemController {
             return;
 
         this._state.wifiEnabled = enabled;
+        this._refreshAirplane();
+        this._emit();
+    }
+
+    _refreshWwan() {
+        if (!this._network)
+            return;
+        const enabled = unpackBoolean(this._network.get_cached_property('WwanEnabled'));
+        this._state.wwanAvailable = enabled !== null;
+        if (enabled !== null)
+            this._state.wwanEnabled = enabled;
+        this._refreshAirplane();
+    }
+
+    _refreshAirplane() {
+        if (!this._state.airplaneAvailable)
+            return;
+        const bluetoothOff = !this._state.bluetoothAvailable || !this._state.bluetoothEnabled;
+        this._state.airplaneEnabled = !this._state.wifiEnabled &&
+            (!this._state.wwanAvailable || !this._state.wwanEnabled) && bluetoothOff;
+    }
+
+    toggleAirplaneMode() {
+        if (!this._network)
+            return;
+
+        if (!this._airplaneSnapshot) {
+            this._airplaneSnapshot = {
+                wifi: this._state.wifiEnabled,
+                wwan: this._state.wwanEnabled,
+                bluetooth: this._state.bluetoothEnabled,
+            };
+            setBooleanProperty(this._network, NM_IFACE, 'WirelessEnabled', false);
+            if (this._state.wwanAvailable)
+                setBooleanProperty(this._network, NM_IFACE, 'WwanEnabled', false);
+            if (this._bluetoothAdapter)
+                setBooleanProperty(this._bluetoothAdapter, BLUEZ_ADAPTER, 'Powered', false);
+            this._state.airplaneEnabled = true;
+        } else {
+            const previous = this._airplaneSnapshot;
+            this._airplaneSnapshot = null;
+            setBooleanProperty(this._network, NM_IFACE, 'WirelessEnabled', previous.wifi);
+            if (this._state.wwanAvailable)
+                setBooleanProperty(this._network, NM_IFACE, 'WwanEnabled', previous.wwan);
+            if (this._bluetoothAdapter)
+                setBooleanProperty(this._bluetoothAdapter, BLUEZ_ADAPTER, 'Powered', previous.bluetooth);
+            this._state.airplaneEnabled = false;
+        }
         this._emit();
     }
 
@@ -264,6 +320,7 @@ export class SystemController {
             this._refreshBluetooth();
         } else {
             this._state.bluetoothEnabled = false;
+            this._refreshAirplane();
             this._emit();
         }
     }
@@ -275,6 +332,7 @@ export class SystemController {
         this._state.bluetoothEnabled = Boolean(unpackBoolean(
             this._bluetoothAdapter.get_cached_property('Powered')
         ));
+        this._refreshAirplane();
         this._emit();
     }
 
@@ -325,6 +383,11 @@ export class SystemController {
             return;
 
         const sink = this._mixer.get_default_sink();
+        this._state.outputDevices = this._mixer.get_sinks().map(stream => ({
+            id: stream.get_id(),
+            name: stream.get_description() || stream.get_name() || 'Audio output',
+            active: stream.get_id() === sink?.get_id(),
+        }));
         if (!sink) {
             this._state.audioAvailable = false;
             this._emit();
@@ -363,6 +426,22 @@ export class SystemController {
         const normalized = Math.max(0, Math.min(1, value));
         this._sink.volume = normalized * this._mixer.get_vol_max_norm();
         this._sink.push_volume();
+    }
+
+    cycleAudioOutput() {
+        if (!this._mixer || this._mixer.get_state() !== Gvc.MixerControlState.READY)
+            return;
+        const sinks = this._mixer.get_sinks();
+        if (sinks.length < 2)
+            return;
+        const current = this._mixer.get_default_sink();
+        const index = sinks.findIndex(stream => stream.get_id() === current?.get_id());
+        const next = sinks[(index + 1) % sinks.length];
+        try {
+            this._mixer.set_default_sink(next);
+        } catch (error) {
+            logError(error, 'Unable to change audio output');
+        }
     }
 
     toggleMute() {
