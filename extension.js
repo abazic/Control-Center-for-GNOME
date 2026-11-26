@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import St from 'gi://St';
 import {SystemController} from './system.js';
 import {MediaController} from './media.js';
@@ -20,6 +21,10 @@ const PILL_INSET = 13;
 const SYMBOL_SIZE = 33;
 const SYMBOL_ICON_SIZE = 17;
 const SURFACE = 'cc-surface bms-popup-blur-target';
+const MIRROR_UUID = 'mirror@distro.com';
+const CAFFEINE_UUID = 'caffeine@patapon.info';
+const CAFFEINE_SCHEMA = 'org.gnome.shell.extensions.caffeine';
+const CAFFEINE_TOGGLE_KEY = 'cli-toggle';
 
 function label(text, styleClass) {
     return new St.Label({text, style_class: styleClass, x_expand: true});
@@ -271,6 +276,7 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
 
 export default class ControlCenterExtension extends Extension {
     enable() {
+        this._initCaffeineIntegration();
         this._mediaController = new MediaController(state => {
             this._mediaState = state;
             this._syncMediaState();
@@ -340,10 +346,13 @@ export default class ControlCenterExtension extends Extension {
         const mediaActions = new St.BoxLayout({
             style_class: 'cc-media-actions',
         });
-        this._audioOutputButton = makeCircle(
-            'audio-speakers-symbolic', 'Audio Output', () => this._controller.cycleAudioOutput());
-        mediaActions.add_child(this._audioOutputButton);
-        mediaActions.add_child(makeCircle('power-profile-performance-symbolic', 'Power Mode'));
+        this._mirrorButton = makeCircle(
+            'phone-symbolic', 'Mirror Android device', () => this._openMirrorMenu());
+        mediaActions.add_child(this._mirrorButton);
+        this._caffeineButton = makeCircle(
+            'coffee-symbolic', 'Caffeine', () => this._toggleCaffeine());
+        mediaActions.add_child(this._caffeineButton);
+        this._syncCaffeineState();
         mediaColumn.add_child(mediaActions);
 
         composition.add_child(mediaColumn);
@@ -431,14 +440,6 @@ export default class ControlCenterExtension extends Extension {
             this._airplaneButton.reactive = state.airplaneAvailable;
         }
 
-        if (this._audioOutputButton) {
-            const activeOutput = state.outputDevices?.find(device => device.active);
-            this._audioOutputButton.accessible_name = activeOutput
-                ? `Audio Output: ${activeOutput.name}. Click to cycle outputs`
-                : 'Audio Output unavailable';
-            this._audioOutputButton.reactive = (state.outputDevices?.length ?? 0) > 1;
-        }
-
         if (this._focusTile) {
             this._focusTile._ccStatusLabel.text = state.focusEnabled
                 ? 'On' : 'Do Not Disturb';
@@ -458,6 +459,72 @@ export default class ControlCenterExtension extends Extension {
                 muteIcon.icon_name = state.muted
                     ? 'audio-volume-muted-symbolic' : 'audio-volume-high-symbolic';
         }
+    }
+
+    _initCaffeineIntegration() {
+        try {
+            const schema = Gio.SettingsSchemaSource.get_default()
+                .lookup(CAFFEINE_SCHEMA, true);
+            if (!schema)
+                return;
+
+            this._caffeineSettings = new Gio.Settings({settings_schema: schema});
+            this._caffeineSignal = this._caffeineSettings.connect(
+                `changed::${CAFFEINE_TOGGLE_KEY}`,
+                () => this._syncCaffeineState()
+            );
+        } catch (error) {
+            logError(error, 'Unable to connect to Caffeine settings');
+        }
+    }
+
+    _syncCaffeineState() {
+        if (!this._caffeineButton || !this._caffeineSettings)
+            return;
+
+        const active = this._caffeineSettings.get_boolean(CAFFEINE_TOGGLE_KEY);
+        const glyph = this._caffeineButton.get_child();
+        glyph.icon_name = active ? 'coffee-symbolic' : 'coffee-symbolic';
+        this._caffeineButton.opacity = active ? 255 : 190;
+        this._caffeineButton.accessible_name = active
+            ? 'Caffeine enabled. Click to disable'
+            : 'Caffeine disabled. Click to enable';
+    }
+
+    _toggleCaffeine() {
+        const extension = Main.extensionManager.lookup(CAFFEINE_UUID);
+        if (!extension?.stateObj || !this._caffeineSettings) {
+            Main.notifyError(
+                'Caffeine extension unavailable',
+                'Install and enable Caffeine (caffeine@patapon.info) to use this control.'
+            );
+            return;
+        }
+
+        const next = !this._caffeineSettings.get_boolean(CAFFEINE_TOGGLE_KEY);
+        this._caffeineSettings.set_boolean(CAFFEINE_TOGGLE_KEY, next);
+        this._syncCaffeineState();
+    }
+
+    _openMirrorMenu() {
+        const extension = Main.extensionManager.lookup(MIRROR_UUID);
+        const mirrorToggle = extension?.stateObj?._indicator
+            ?.quickSettingsItems?.[0];
+
+        if (!mirrorToggle?.menu) {
+            Main.notifyError(
+                'Mirror extension unavailable',
+                'Install and enable Mirror (mirror@distro.com) to browse Android devices.'
+            );
+            return;
+        }
+
+        this._indicator.menu.close();
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            if (mirrorToggle.menu)
+                mirrorToggle.menu.open();
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     _syncMediaState() {
@@ -481,6 +548,10 @@ export default class ControlCenterExtension extends Extension {
     }
 
     disable() {
+        if (this._caffeineSettings && this._caffeineSignal)
+            this._caffeineSettings.disconnect(this._caffeineSignal);
+        this._caffeineSignal = 0;
+        this._caffeineSettings = null;
         this._mediaController?.destroy();
         this._mediaController = null;
         this._controller?.destroy();
