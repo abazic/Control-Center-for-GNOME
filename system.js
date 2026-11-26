@@ -9,20 +9,18 @@ const BLUEZ_NAME = 'org.bluez';
 const BLUEZ_ROOT = '/';
 const BLUEZ_MANAGER = 'org.freedesktop.DBus.ObjectManager';
 const BLUEZ_ADAPTER = 'org.bluez.Adapter1';
-const PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties';
-
 function unpackBoolean(variant) {
     return variant ? variant.deep_unpack() : null;
 }
 
-function setBooleanProperty(proxy, interfaceName, propertyName, value) {
+function setProperty(proxy, interfaceName, propertyName, variant) {
     if (!proxy)
         return;
 
     const parameters = new GLib.Variant('(ssv)', [
         interfaceName,
         propertyName,
-        new GLib.Variant('b', value),
+        variant,
     ]);
 
     proxy.call(
@@ -41,6 +39,10 @@ function setBooleanProperty(proxy, interfaceName, propertyName, value) {
     );
 }
 
+function setBooleanProperty(proxy, interfaceName, propertyName, value) {
+    setProperty(proxy, interfaceName, propertyName, new GLib.Variant('b', value));
+}
+
 /**
  * Owns the system-facing part of the Control Center.
  *
@@ -52,6 +54,8 @@ export class SystemController {
         this._onStateChanged = onStateChanged;
         this._signals = [];
         this._state = {
+            brightnessAvailable: false,
+            brightness: 0.65,
             wifiAvailable: false,
             wifiEnabled: false,
             bluetoothAvailable: false,
@@ -63,6 +67,7 @@ export class SystemController {
         };
 
         this._initFocus();
+        this._initBrightness();
         this._initNetworkManager();
         this._initBluetooth();
         this._initAudio();
@@ -103,6 +108,52 @@ export class SystemController {
         this._notifications.set_boolean(
             'show-banners',
             this._notifications.get_boolean('show-banners') === false
+        );
+    }
+
+    _initBrightness() {
+        try {
+            this._brightness = Gio.DBusProxy.new_for_bus_sync(
+                Gio.BusType.SESSION,
+                Gio.DBusProxyFlags.NONE,
+                null,
+                'org.gnome.Shell.Brightness',
+                '/org/gnome/Shell/Brightness',
+                'org.gnome.Shell.Brightness',
+                null
+            );
+            this._refreshBrightness();
+            this._signals.push([
+                this._brightness,
+                this._brightness.connect('g-properties-changed', () => this._refreshBrightness()),
+            ]);
+        } catch (error) {
+            logError(error, 'GNOME Shell brightness control is unavailable');
+        }
+    }
+
+    _refreshBrightness() {
+        if (!this._brightness)
+            return;
+
+        this._state.brightnessAvailable = Boolean(unpackBoolean(
+            this._brightness.get_cached_property('HasBrightnessControl')
+        ));
+        const value = this._brightness.get_cached_property('Brightness');
+        if (value)
+            this._state.brightness = Math.max(0, Math.min(1, value.deep_unpack()));
+        this._emit();
+    }
+
+    setBrightness(value) {
+        if (!this._brightness || !this._state.brightnessAvailable)
+            return;
+
+        setProperty(
+            this._brightness,
+            'org.gnome.Shell.Brightness',
+            'Brightness',
+            new GLib.Variant('d', Math.max(0, Math.min(1, value)))
         );
     }
 
@@ -347,6 +398,7 @@ export class SystemController {
         this._mixer = null;
         this._sink = null;
         this._network = null;
+        this._brightness = null;
         this._bluezManager = null;
         this._notifications = null;
     }
