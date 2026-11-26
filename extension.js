@@ -273,12 +273,23 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
         style_class: 'cc-slider-controls',
     });
     controls.add_child(icon(leadingIcon, 15, 'cc-slider-icon'));
-    const track = new St.Widget({x_expand: true, style_class: 'cc-slider-track'});
-    const fill = new St.Widget({style_class: `cc-slider-fill ${fillClass}`});
+    const track = new St.Widget({
+        x_expand: true,
+        reactive: Boolean(onValueChanged),
+        can_focus: Boolean(onValueChanged),
+        style_class: 'cc-slider-track',
+    });
+    const fill = new St.Widget({
+        reactive: false,
+        style_class: `cc-slider-fill ${fillClass}`,
+    });
     track.add_child(fill);
     let currentValue = Math.max(0, Math.min(1, initialValue));
+    let dragSignal = 0;
     const updateFillWidth = () => {
-        fill.set_width(currentValue * track.get_width());
+        const width = track.get_width();
+        if (width > 0)
+            fill.set_width(currentValue * width);
     };
     const setValue = value => {
         currentValue = Math.max(0, Math.min(1, value));
@@ -286,27 +297,45 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
         if (onValueChanged)
             onValueChanged(currentValue);
     };
+    const updateFromEvent = event => {
+        const [stageX] = event.get_coords();
+        const [trackX] = track.get_transformed_position();
+        const width = track.get_width();
+        if (width > 0)
+            setValue((stageX - trackX) / width);
+    };
+    const stopDragging = () => {
+        if (dragSignal) {
+            global.stage.disconnect(dragSignal);
+            dragSignal = 0;
+        }
+    };
     track.connect('notify::width', updateFillWidth);
     if (onValueChanged) {
-        track.reactive = true;
-        track.can_focus = true;
-        const updateFromEvent = event => {
-            const [stageX] = event.get_coords();
-            const [trackX] = track.get_transformed_position();
-            const width = track.get_width();
-            if (width > 0)
-                setValue((stageX - trackX) / width);
-        };
+        // Listen on the stage while dragging so motion continues to update
+        // even when the pointer leaves the narrow slider track.
         track.connect('button-press-event', (actor, event) => {
-            updateFromEvent(event);
-            return Clutter.EVENT_STOP;
-        });
-        track.connect('motion-event', (actor, event) => {
-            if ((event.get_state() & Clutter.ModifierType.BUTTON1_MASK) === 0)
+            if (event.get_button() !== 1)
                 return Clutter.EVENT_PROPAGATE;
             updateFromEvent(event);
+            stopDragging();
+            dragSignal = global.stage.connect('captured-event', (stage, dragEvent) => {
+                const type = dragEvent.type();
+                if (type === Clutter.EventType.MOTION) {
+                    updateFromEvent(dragEvent);
+                    return Clutter.EVENT_STOP;
+                }
+                if (type === Clutter.EventType.BUTTON_RELEASE &&
+                    dragEvent.get_button() === 1) {
+                    updateFromEvent(dragEvent);
+                    stopDragging();
+                    return Clutter.EVENT_STOP;
+                }
+                return Clutter.EVENT_PROPAGATE;
+            });
             return Clutter.EVENT_STOP;
         });
+        track.connect('destroy', stopDragging);
     }
     updateFillWidth();
     tile._ccSetValue = value => {
