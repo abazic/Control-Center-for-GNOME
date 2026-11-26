@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import St from 'gi://St';
 import {SystemController} from './system.js';
+import {MediaController} from './media.js';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -133,7 +134,7 @@ function makeFocusTile(onClick = null) {
     return tile;
 }
 
-function makeMediaTile() {
+function makeMediaTile(onPrevious, onPlayPause, onNext) {
     const tile = makeSurface('cc-media-tile', true);
     tile.set_size(LARGE_WIDTH, LARGE_HEIGHT);
     tile.y_align = Clutter.ActorAlign.START;
@@ -157,8 +158,10 @@ function makeMediaTile() {
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-media-copy',
     });
-    heading.add_child(label('Not Playing', 'cc-media-title'));
-    heading.add_child(label('Your music', 'cc-subtitle'));
+    const titleLabel = label('Not Playing', 'cc-media-title');
+    const artistLabel = label('Your music', 'cc-subtitle');
+    heading.add_child(titleLabel);
+    heading.add_child(artistLabel);
     header.add_child(artwork);
     header.add_child(heading);
     const spacer = new St.Widget({y_expand: true});
@@ -167,8 +170,30 @@ function makeMediaTile() {
         style_class: 'cc-media-controls',
         x_align: Clutter.ActorAlign.CENTER,
     });
-    for (const name of ['media-skip-backward-symbolic', 'media-playback-start-symbolic', 'media-skip-forward-symbolic'])
-        controls.add_child(icon(name, 16, 'cc-media-control-icon'));
+    const makeMediaButton = (name, accessibleName, callback) => {
+        const button = new St.Button({
+            reactive: true,
+            can_focus: true,
+            track_hover: true,
+            style_class: 'cc-media-control-button',
+            accessible_name: accessibleName,
+        });
+        button.set_child(icon(name, 16, 'cc-media-control-icon'));
+        button.connect('clicked', callback);
+        return button;
+    };
+    const previousButton = makeMediaButton(
+        'media-skip-backward-symbolic', 'Previous track', onPrevious);
+    const playButton = makeMediaButton(
+        'media-playback-start-symbolic', 'Play or pause', onPlayPause);
+    const nextButton = makeMediaButton(
+        'media-skip-forward-symbolic', 'Next track', onNext);
+    controls.add_child(previousButton);
+    controls.add_child(playButton);
+    controls.add_child(nextButton);
+    tile._ccTitleLabel = titleLabel;
+    tile._ccArtistLabel = artistLabel;
+    tile._ccPlayButton = playButton;
     tile.add_child(header);
     tile.add_child(spacer);
     tile.add_child(controls);
@@ -231,6 +256,10 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
 
 export default class ControlCenterExtension extends Extension {
     enable() {
+        this._mediaController = new MediaController(state => {
+            this._mediaState = state;
+            this._syncMediaState();
+        });
         this._controller = new SystemController(state => {
             this._systemState = state;
             this._syncSystemState();
@@ -273,7 +302,9 @@ export default class ControlCenterExtension extends Extension {
         this._bluetoothButton = makeCircle(
             'bluetooth-active-symbolic', 'Bluetooth', () => this._controller.toggleBluetooth());
         connectivity.add_child(this._bluetoothButton);
-        connectivity.add_child(makeCircle('radio-symbolic', 'Nearby devices'));
+        this._airplaneButton = makeCircle(
+            'airplane-mode-symbolic', 'Airplane Mode', () => this._controller.toggleAirplaneMode());
+        connectivity.add_child(this._airplaneButton);
         left.add_child(connectivity);
         this._focusTile = makeFocusTile(() => this._controller.toggleFocus());
         left.add_child(this._focusTile);
@@ -284,12 +315,19 @@ export default class ControlCenterExtension extends Extension {
             orientation: Clutter.Orientation.VERTICAL,
             style_class: 'cc-media-column',
         });
-        mediaColumn.add_child(makeMediaTile());
+        this._mediaTile = makeMediaTile(
+            () => this._mediaController.previous(),
+            () => this._mediaController.playPause(),
+            () => this._mediaController.next()
+        );
+        mediaColumn.add_child(this._mediaTile);
 
         const mediaActions = new St.BoxLayout({
             style_class: 'cc-media-actions',
         });
-        mediaActions.add_child(makeCircle('video-display-symbolic', 'Mirror'));
+        this._audioOutputButton = makeCircle(
+            'audio-speakers-symbolic', 'Audio Output', () => this._controller.cycleAudioOutput());
+        mediaActions.add_child(this._audioOutputButton);
         mediaActions.add_child(makeCircle('power-profile-performance-symbolic', 'Power Mode'));
         mediaColumn.add_child(mediaActions);
 
@@ -368,6 +406,23 @@ export default class ControlCenterExtension extends Extension {
                 : 'Bluetooth unavailable';
         }
 
+        if (this._airplaneButton) {
+            const glyph = this._airplaneButton.get_child();
+            glyph.icon_name = state.airplaneEnabled
+                ? 'airplane-mode-symbolic' : 'network-wireless-signal-excellent-symbolic';
+            this._airplaneButton.accessible_name = state.airplaneEnabled
+                ? 'Airplane Mode On' : 'Airplane Mode Off';
+            this._airplaneButton.reactive = state.airplaneAvailable;
+        }
+
+        if (this._audioOutputButton) {
+            const activeOutput = state.outputDevices?.find(device => device.active);
+            this._audioOutputButton.accessible_name = activeOutput
+                ? `Audio Output: ${activeOutput.name}. Click to cycle outputs`
+                : 'Audio Output unavailable';
+            this._audioOutputButton.reactive = (state.outputDevices?.length ?? 0) > 1;
+        }
+
         if (this._focusTile) {
             this._focusTile._ccStatusLabel.text = state.focusEnabled
                 ? 'On' : 'Do Not Disturb';
@@ -382,7 +437,24 @@ export default class ControlCenterExtension extends Extension {
             this._volumeTile._ccSetValue(state.volume);
     }
 
+    _syncMediaState() {
+        const state = this._mediaState;
+        if (!state || !this._mediaTile)
+            return;
+        this._mediaTile._ccTitleLabel.text = state.title;
+        this._mediaTile._ccArtistLabel.text = state.artist;
+        const playIcon = this._mediaTile._ccPlayButton.get_child();
+        const playing = state.playbackStatus === 'Playing';
+        playIcon.icon_name = playing
+            ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
+        this._mediaTile._ccPlayButton.accessible_name = playing ? 'Pause' : 'Play';
+        this._mediaTile._ccPlayButton.reactive = state.canPlay;
+        this._mediaTile._ccPlayButton.opacity = state.canPlay ? 255 : 110;
+    }
+
     disable() {
+        this._mediaController?.destroy();
+        this._mediaController = null;
         this._controller?.destroy();
         this._controller = null;
         this._indicator?.destroy();
