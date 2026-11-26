@@ -14,7 +14,7 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Power Mode shortcut opens GNOME Shell's native power-profile menu (Performance, Balanced, and Power Saver when the system exposes those profiles).
 - Bluetooth power through the BlueZ Adapter1 D-Bus API.
 - Focus / Do Not Disturb through `org.gnome.desktop.notifications` (`show-banners`).
-- Display brightness through GNOME Shell's `org.gnome.Shell.Brightness` D-Bus interface (GNOME 49+).
+- Display brightness through GNOME Shell's `Main.brightnessManager.globalScale` API (GNOME 49+).
 - Output volume and mute through GVC / the PulseAudio-compatible audio server, including PipeWire-Pulse.
 - MPRIS media controls for the active session player (previous, play/pause, next, title, and artist).
 - Airplane Mode coordination for Wi-Fi, Bluetooth, and WWAN when the modem exposes that control; the previous radio states are restored when disabling it.
@@ -24,7 +24,7 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Control Center is the primary replacement interface: its custom macOS-inspired controls operate the same GNOME system services as native Quick Settings (NetworkManager, BlueZ, GNOME notification settings, GNOME Shell brightness, and GVC audio). This keeps system state synchronized without displaying duplicate native controls.
 - The native GNOME Quick Settings panel indicator can be hidden or shown with the **Hide Quick Settings bawaan** switch in Preferences. It is enabled by default; when disabled, GNOME's native indicator remains available. The native Quick Settings grid is not reparented, modified, or shown inside the custom popup.
 - System actions are routed through the underlying GNOME services rather than copied native Quick Settings actors. This is intended to keep the custom controls aligned with system state while avoiding duplicate tiles.
-- The tile-size preference is available in the extension Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square). This size selector changes the custom Wi-Fi and Focus tiles; the other shortcut circles, media tile, and sliders retain their own layout dimensions.
+- Each supported tile has an independent size preference in the extension Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square). Media Player defaults to Large; the other tiles default to Small.
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
 - GNOME Shell ES module extension structure.
@@ -80,7 +80,7 @@ EXT_DIR="$HOME/.local/share/gnome-shell/extensions/control-center@abazic.github.
 glib-compile-schemas "$EXT_DIR/schemas/"
 ```
 
-Then reopen the Preferences window. If the key is still missing, reinstall the latest extension package so that its `prefs.js` and schema XML come from the same revision.
+Then **log out of GNOME and log back in** so GNOME Shell reloads its extension schema source, and reopen Preferences. If the key is still missing, reinstall the latest extension package so that its `prefs.js` and schema XML come from the same revision.
 
 After installation, the **Control Center grid icon should appear in the GNOME top panel**. Click it to open the popup.
 
@@ -125,7 +125,7 @@ gnome-shell --version
 - [x] Wi-Fi state/actions through NetworkManager.
 - [x] Bluetooth power/state through BlueZ.
 - [x] Focus / Do Not Disturb through GSettings.
-- [x] Display brightness through GNOME Shell D-Bus (GNOME 49+).
+- [x] Display brightness through GNOME Shell `Main.brightnessManager.globalScale` (GNOME 49+).
 - [x] Output volume through GVC.
 - [x] Airplane Mode coordination where supported (NetworkManager Wi-Fi/WWAN + BlueZ Bluetooth).
 - [x] MPRIS media controls (active player selection and metadata).
