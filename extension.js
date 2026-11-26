@@ -103,6 +103,8 @@ function makeWifiTile(onClick = null, onMenuClick = null) {
     copy.add_child(status);
     tile._ccIcon = symbolIcon;
     tile._ccStatusLabel = status;
+    tile._ccSymbol = symbol;
+    tile._ccCopy = copy;
     tile.add_child(symbol);
     tile.add_child(copy);
     return tile;
@@ -179,6 +181,8 @@ function makeFocusTile(onClick = null) {
     copy.add_child(status);
     tile._ccIcon = symbolIcon;
     tile._ccStatusLabel = status;
+    tile._ccSymbol = symbol;
+    tile._ccCopy = copy;
     tile.add_child(symbol);
     tile.add_child(copy);
     return tile;
@@ -646,12 +650,28 @@ export default class ControlCenterExtension extends Extension {
         const height = size === 'large' ? LARGE_HEIGHT : SMALL;
         actor.set_size(width, height);
         const radius = size === 'large' ? 29 : height / 2;
-        actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${radius}px;`);
-        if (actor._ccIcon) {
-            actor._ccIcon.set_icon_size(size === 'small' ? 25 : SYMBOL_ICON_SIZE);
-            actor._ccLabel?.show();
+        actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${radius}px; padding: ${size === 'small' ? 0 : size === 'medium' ? '0 13px' : '12px'};`);
+
+        // Explicitly update child visibility and symbol geometry for Wi-Fi and
+        // Focus; CSS alone can leave the initial pill layout intact on Shell.
+        if (actor._ccCopy) {
             if (size === 'small')
-                actor._ccLabel?.hide();
+                actor._ccCopy.hide();
+            else
+                actor._ccCopy.show();
+        }
+        if (actor._ccSymbol) {
+            const symbolSize = size === 'small' ? 46 : SYMBOL_SIZE;
+            actor._ccSymbol.set_size(symbolSize, symbolSize);
+            actor._ccSymbol.set_style(`width: ${symbolSize}px; min-width: ${symbolSize}px; max-width: ${symbolSize}px; height: ${symbolSize}px; min-height: ${symbolSize}px; max-height: ${symbolSize}px; border-radius: ${size === 'large' ? 29 : 30}px;`);
+        }
+        if (actor._ccIcon)
+            actor._ccIcon.set_icon_size(size === 'small' ? 25 : SYMBOL_ICON_SIZE);
+        if (actor._ccLabel) {
+            if (size === 'small')
+                actor._ccLabel.hide();
+            else
+                actor._ccLabel.show();
         }
         for (const option of ['small', 'medium', 'large'])
             actor.remove_style_class_name(`cc-tile-size-${option}`);
