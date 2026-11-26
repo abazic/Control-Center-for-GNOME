@@ -276,6 +276,10 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
 export default class ControlCenterExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
+        this._quickSettingsSizeSignal = this._settings.connect(
+            'changed::quick-settings-size',
+            () => this._syncQuickSettingsSize()
+        );
         this._initCaffeineIntegration();
         this._mediaController = new MediaController(state => {
             this._mediaState = state;
@@ -308,6 +312,7 @@ export default class ControlCenterExtension extends Extension {
             style_class: 'cc-content',
         });
         this._content = content;
+        this._syncQuickSettingsSize();
 
         const composition = new St.BoxLayout({
             style_class: 'cc-main-grid',
@@ -498,6 +503,19 @@ export default class ControlCenterExtension extends Extension {
         );
     }
 
+    _syncQuickSettingsSize() {
+        if (!this._content || !this._settings)
+            return;
+
+        for (const size of ['small', 'medium', 'large'])
+            this._content.remove_style_class_name(`cc-size-${size}`);
+
+        const size = this._settings.get_string('quick-settings-size');
+        const supportedSize = ['small', 'medium', 'large'].includes(size)
+            ? size : 'small';
+        this._content.add_style_class_name(`cc-size-${supportedSize}`);
+    }
+
     _restoreNativeQuickSettings() {
         if (this._quickSettingsSource) {
             GLib.Source.remove(this._quickSettingsSource);
@@ -609,6 +627,10 @@ export default class ControlCenterExtension extends Extension {
     }
 
     disable() {
+        if (this._settings && this._quickSettingsSizeSignal)
+            this._settings.disconnect(this._quickSettingsSizeSignal);
+        this._quickSettingsSizeSignal = 0;
+        this._settings = null;
         this._restoreNativeQuickSettings();
         this._settings = null;
         this._content = null;
