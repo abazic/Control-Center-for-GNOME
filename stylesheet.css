@@ -328,12 +328,6 @@
     spacing: 8px;
 }
 
-.cc-content.cc-size-large .cc-wifi-tile,
-.cc-content.cc-size-large .cc-focus-tile {
-    flex-direction: column;
-    justify-content: center;
-}
-
 .cc-content.cc-size-large .cc-wifi-tile .cc-copy,
 .cc-content.cc-size-large .cc-focus-tile .cc-copy {
     width: 100%;
