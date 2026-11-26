@@ -23,7 +23,6 @@ const SYMBOL_ICON_SIZE = 17;
 const SURFACE = 'cc-surface bms-popup-blur-target';
 const MIRROR_UUID = 'mirror@distro.com';
 const CAFFEINE_UUID = 'caffeine@patapon.info';
-const CAFFEINE_SCHEMA = 'org.gnome.shell.extensions.caffeine';
 const CAFFEINE_TOGGLE_KEY = 'cli-toggle';
 
 function label(text, styleClass) {
@@ -462,6 +461,8 @@ export default class ControlCenterExtension extends Extension {
     }
 
     _initCaffeineIntegration() {
+        if (this._caffeineSettings)
+            return;
         try {
             const extension = Main.extensionManager.lookup(CAFFEINE_UUID);
             if (!extension?.stateObj)
@@ -491,6 +492,8 @@ export default class ControlCenterExtension extends Extension {
     }
 
     _openCaffeineMenu() {
+        this._initCaffeineIntegration();
+        this._syncCaffeineState();
         const extension = Main.extensionManager.lookup(CAFFEINE_UUID);
         const caffeineToggle = extension?.stateObj?._caffeineIndicator
             ?.quickSettingsItems?.[0];
