@@ -229,3 +229,27 @@
     max-height: 58px;
     border-radius: 29px;
 }
+
+.cc-edit-control-row {
+    width: 259px;
+}
+
+.cc-edit-control-button {
+    width: 86px;
+    height: 21px;
+    min-width: 86px;
+    min-height: 21px;
+    max-width: 86px;
+    max-height: 21px;
+    border-radius: 10px;
+    padding: 0;
+    margin: 0 auto;
+    background-color: rgba(0, 170, 205, 0.54);
+    border: 1px solid rgba(160, 245, 255, 0.52);
+}
+
+.cc-edit-control-label {
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 600;
+}
