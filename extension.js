@@ -128,7 +128,7 @@ function mediaGicon(shape) {
 const BACKDROP_RADIUS = 36;
 const BACKDROP_FEATHER = 16;
 const BACKDROP_BLUR = 60;
-const BACKDROP_BRIGHTNESS = 0.8;
+const BACKDROP_BRIGHTNESS = 1.0;
 
 const FEATHER_DECLARATIONS = `
 uniform float size_x;
