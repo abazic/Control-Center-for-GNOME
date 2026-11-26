@@ -57,9 +57,9 @@
 }
 
 .cc-symbol-disc {
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
+    width: 46px;
+    height: 46px;
+    border-radius: 23px;
     background-color: rgba(255, 255, 255, 0.18);
     padding: 6px;
 }
