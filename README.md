@@ -1,3 +1,7 @@
+## Preview
+
+![Control Center Preview](screenshots/control-center.png)
+
 # Control Center for GNOME
 
 A macOS-inspired Control Center for GNOME Shell, built around compact **Liquid Glass-style tiles** with optional per-tile blur through Blur my Shell.
