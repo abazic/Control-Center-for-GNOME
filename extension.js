@@ -530,8 +530,11 @@ export default class ControlCenterExtension extends Extension {
     _syncNativeQuickSettingsVisibility() {
         const quickSettings = Main.panel.statusArea.quickSettings;
         const container = quickSettings?.container;
-        if (!container)
+        if (!container) {
+            if (this._settings?.get_boolean('hide-native-quick-settings'))
+                this._queueQuickSettingsIntegration();
             return;
+        }
 
         this._nativeQuickSettings = quickSettings;
         if (this._settings?.get_boolean('hide-native-quick-settings'))
