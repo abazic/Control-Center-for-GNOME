@@ -6,6 +6,9 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
+const CIRCLE = 58;
+const SPACING = 9;
+const GRID_UNIT = (2 * CIRCLE) + SPACING;
 const SURFACE = 'cc-surface bms-popup-blur-target';
 
 function label(text, styleClass) {
@@ -20,6 +23,7 @@ function makeSurface(styleClass, vertical = false) {
     return new St.BoxLayout({
         orientation: vertical ? Clutter.Orientation.VERTICAL : Clutter.Orientation.HORIZONTAL,
         x_expand: false,
+        y_expand: false,
         style_class: `${SURFACE} ${styleClass}`,
     });
 }
@@ -49,6 +53,7 @@ function makeCircle(name, accessibleName) {
         style_class: `${SURFACE} cc-round-control`,
         accessible_name: accessibleName,
     });
+    button.set_size(CIRCLE, CIRCLE);
     button.set_child(icon(name, 25));
     return button;
 }
@@ -72,6 +77,9 @@ function makeFocusTile() {
 
 function makeMediaTile() {
     const tile = makeSurface('cc-media-tile', true);
+    tile.set_size(GRID_UNIT, GRID_UNIT);
+    tile.y_align = Clutter.ActorAlign.CENTER;
+
     const artwork = new St.Widget({style_class: 'cc-artwork'});
     artwork.set_size(34, 34);
     artwork.add_child(icon('audio-x-generic-symbolic', 20, 'cc-artwork-icon'));
