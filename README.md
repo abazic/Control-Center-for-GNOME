@@ -24,7 +24,7 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - Control Center is the primary replacement interface: its custom macOS-inspired controls operate the same GNOME system services as native Quick Settings (NetworkManager, BlueZ, GNOME notification settings, GNOME Shell brightness, and GVC audio). This keeps system state synchronized without displaying duplicate native controls.
 - The native GNOME Quick Settings panel indicator can be hidden or shown with the **Hide Quick Settings bawaan** switch in Preferences. It is enabled by default; when disabled, GNOME's native indicator remains available. The native Quick Settings grid is not reparented, modified, or shown inside the custom popup.
 - System actions are routed through the underlying GNOME services rather than copied native Quick Settings actors. This is intended to keep the custom controls aligned with system state while avoiding duplicate tiles.
-- Each supported tile has an independent size preference in the extension Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square). Media Player defaults to Large; the other tiles default to Small.
+- Each supported tile has an independent size preference in the extension Preferences: Small (60 × 60 px, default), Medium (130 × 60 px pill), and Large (130 × 130 px square, 29 px corner radius; equivalent to 2 small tiles plus one spacing unit per side). Media Player defaults to Large; the other tiles default to Small.
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
 - GNOME Shell ES module extension structure.
