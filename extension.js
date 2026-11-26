@@ -263,6 +263,16 @@ function makeSliderTile(title, leadingIcon, trailingIcon, fillClass, onValueChan
     }
     fill.set_style(`width: ${initialValue * 100}%;`);
     tile._ccSetValue = value => fill.set_style(`width: ${Math.max(0, Math.min(1, value)) * 100}%;`);
+    tile._ccSetEnabled = enabled => {
+        track.reactive = Boolean(enabled && onValueChanged);
+        track.can_focus = Boolean(enabled && onValueChanged);
+        track.opacity = enabled ? 255 : 110;
+        if (tile._ccTrailingButton) {
+            tile._ccTrailingButton.reactive = Boolean(enabled && trailingAction);
+            tile._ccTrailingButton.opacity = enabled ? 255 : 110;
+        }
+    };
+    tile._ccTrack = track;
     controls.add_child(track);
     if (trailingAction) {
         const trailingButton = new St.Button({
@@ -481,11 +491,14 @@ export default class ControlCenterExtension extends Extension {
             setControlActive(this._focusTile, state.focusEnabled);
         }
 
-        if (this._brightnessTile && state.brightnessAvailable)
-            this._brightnessTile._ccSetValue(state.brightness);
+        if (this._brightnessTile) {
+            this._brightnessTile._ccSetEnabled(state.brightnessAvailable);
+            if (state.brightnessAvailable)
+                this._brightnessTile._ccSetValue(state.brightness);
+        }
 
         if (this._volumeTile) {
-            this._volumeTile._ccTrailingButton.reactive = state.audioAvailable;
+            this._volumeTile._ccSetEnabled(state.audioAvailable);
             if (state.audioAvailable)
                 this._volumeTile._ccSetValue(state.volume);
             const muteIcon = this._volumeTile._ccTrailingButton?.get_child();
