@@ -1,4 +1,7 @@
 import Clutter from 'gi://Clutter';
+import Cogl from 'gi://Cogl';
+import GObject from 'gi://GObject';
+import Shell from 'gi://Shell';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
@@ -119,6 +122,75 @@ function mediaGicon(shape) {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
         `<path fill="#ffffff" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" d="${MEDIA_SHAPES[shape]}"/></svg>`;
     return Gio.BytesIcon.new(new GLib.Bytes(new TextEncoder().encode(svg)));
+}
+
+// Latar panel: blur biasa dengan sudut bulat dan tepi memudar.
+const BACKDROP_RADIUS = 36;
+const BACKDROP_FEATHER = 16;
+const BACKDROP_BLUR = 60;
+const BACKDROP_BRIGHTNESS = 0.8;
+
+const FEATHER_DECLARATIONS = `
+uniform float size_x;
+uniform float size_y;
+uniform float corner_radius;
+uniform float feather;
+`;
+
+const FEATHER_CODE = `
+vec2 half_size = vec2(size_x, size_y) * 0.5;
+vec2 point = cogl_tex_coord_in[0].xy * vec2(size_x, size_y) - half_size;
+vec2 q = abs(point) - half_size + vec2(corner_radius);
+float dist = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - corner_radius;
+cogl_color_out *= 1.0 - smoothstep(-feather, 0.0, dist);
+`;
+
+const FeatherEffect = GObject.registerClass(
+class ControlCenterFeatherEffect extends Clutter.ShaderEffect {
+    vfunc_get_static_snippet() {
+        const snippet = Cogl.Snippet.new(Cogl.SnippetHook.FRAGMENT,
+            FEATHER_DECLARATIONS, null);
+        snippet.set_post(FEATHER_CODE);
+        return snippet;
+    }
+
+    setSize(width, height) {
+        this.set_uniform_float('size_x', 1, [width]);
+        this.set_uniform_float('size_y', 1, [height]);
+        this.set_uniform_float('corner_radius', 1, [BACKDROP_RADIUS]);
+        this.set_uniform_float('feather', 1, [BACKDROP_FEATHER]);
+        this.queue_repaint();
+    }
+});
+
+// Salinan wallpaper dan jendela di belakang menu, di-blur lalu dibentuk.
+function makeBackdrop() {
+    const mask = new St.Widget({reactive: false, clip_to_allocation: true, visible: false});
+    const blurred = new St.Widget({reactive: false, clip_to_allocation: true});
+    const clone = new Clutter.Clone({source: global.window_group});
+    const feather = new FeatherEffect();
+    blurred.add_effect(new Shell.BlurEffect({
+        mode: Shell.BlurMode.ACTOR,
+        radius: BACKDROP_BLUR,
+        brightness: BACKDROP_BRIGHTNESS,
+    }));
+    mask.add_effect(feather);
+    blurred.add_child(clone);
+    mask.add_child(blurred);
+
+    let geometry = '';
+    mask.setGeometry = (x, y, width, height) => {
+        const next = [x, y, width, height].join();
+        if (next === geometry)
+            return;
+        geometry = next;
+        mask.set_position(x, y);
+        mask.set_size(width, height);
+        blurred.set_size(width, height);
+        clone.set_position(-x, -y);
+        feather.setSize(width, height);
+    };
+    return mask;
 }
 
 function label(text, styleClass) {
@@ -444,6 +516,7 @@ export default class ControlCenterExtension extends Extension {
             'open-state-changed',
             (menu, isOpen) => {
                 this._watchExtraToggles(isOpen);
+                this._watchBackdrop(isOpen);
                 if (isOpen)
                     this._indicator?.add_style_class_name('cc-active');
                 else {
@@ -471,6 +544,56 @@ export default class ControlCenterExtension extends Extension {
             box.add_child(container);
         }
         box.set_child_above_sibling(container, anchor);
+    }
+
+    _watchBackdrop(isOpen) {
+        if (this._backdropSignal)
+            global.stage.disconnect(this._backdropSignal);
+        this._backdropSignal = 0;
+        if (!isOpen) {
+            this._backdrop?.hide();
+            return;
+        }
+
+        if (!this._backdrop) {
+            this._backdrop = makeBackdrop();
+            Main.uiGroup.add_child(this._backdrop);
+        }
+        this._syncBackdrop();
+        // Mengikuti posisi dan animasi menu selama terbuka.
+        this._backdropSignal = global.stage.connect('before-update',
+            () => this._syncBackdrop());
+    }
+
+    _syncBackdrop() {
+        const menuActor = this._indicator?.menu.actor;
+        const backdrop = this._backdrop;
+        if (!menuActor || !backdrop || !this._content)
+            return;
+
+        const [x, y] = this._content.get_transformed_position();
+        const [width, height] = this._content.get_transformed_size();
+        if (!this._content.mapped || !(width > 0 && height > 0)) {
+            backdrop.hide();
+            return;
+        }
+
+        // Letakkan di bawah menu dan di bawah semua blur tile milik Blur my Shell.
+        let anchor = menuActor;
+        let previous = anchor.get_previous_sibling();
+        while (previous && (previous === backdrop || previous.name?.startsWith('bms-popup'))) {
+            if (previous !== backdrop)
+                anchor = previous;
+            previous = previous.get_previous_sibling();
+        }
+        if (backdrop.get_next_sibling() !== anchor)
+            Main.uiGroup.set_child_below_sibling(backdrop, anchor);
+
+        backdrop.setGeometry(Math.round(x), Math.round(y),
+            Math.round(width), Math.round(height));
+        if (backdrop.opacity !== menuActor.opacity)
+            backdrop.opacity = menuActor.opacity;
+        backdrop.show();
     }
 
     _buildMenu() {
@@ -561,14 +684,6 @@ export default class ControlCenterExtension extends Extension {
         this._editControlRow = editControlRow;
 
         const root = new St.Widget({layout_manager: new Clutter.BinLayout(), x_expand: true});
-        // Latar blur: saudara (bukan induk) tile, sebab Blur my Shell tidak
-        // memeriksa isi permukaan yang sudah menjadi target blur. Ditambahkan
-        // lebih dulu agar blur-nya berada di bawah blur tile.
-        root.add_child(new St.Widget({
-            style_class: 'cc-backdrop bms-popup-blur-target',
-            x_expand: true,
-            y_expand: true,
-        }));
         root.add_child(content);
         root.add_child(this._buildPopup());
         this._root = root;
@@ -1061,6 +1176,9 @@ export default class ControlCenterExtension extends Extension {
         this._closeMenuOverlay();
         this._watchExtraToggles(false);
         this._extraTiles = [];
+        this._watchBackdrop(false);
+        this._backdrop?.destroy();
+        this._backdrop = null;
         if (this._settings && this._hideQuickSettingsSignal)
             this._settings.disconnect(this._hideQuickSettingsSignal);
         this._hideQuickSettingsSignal = 0;
