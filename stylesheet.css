@@ -483,10 +483,6 @@
 }
 
 /* Popup daftar menu di atas tile. */
-.cc-overlay {
-    background-color: rgba(0, 0, 0, 0.30);
-    border-radius: 29px;
-}
 .cc-popup {
     width: 238px;
     padding: 14px;
@@ -519,14 +515,14 @@
 
 /* Aktif, ukuran Small: seluruh bulatan putih. */
 .cc-surface.cc-control-active.cc-tile-size-small {
-    background-color: #ffffff;
+    background-color: #ffffff !important;
     border-color: #ffffff;
 }
 
 /* Aktif, ukuran Medium/Large: lingkaran ikon putih, badan tetap transparan. */
 .cc-surface.cc-control-active.cc-tile-size-medium .cc-symbol-disc,
 .cc-surface.cc-control-active.cc-tile-size-large .cc-symbol-disc {
-    background-color: #ffffff;
+    background-color: #ffffff !important;
 }
 
 .cc-surface.cc-control-active .cc-symbol-disc .cc-icon {
