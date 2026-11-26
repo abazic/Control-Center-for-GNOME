@@ -177,15 +177,15 @@
 
 /* Full-width rows span the same four-column grid (270px). */
 .cc-slider-tile {
-    width: 270px;
-    height: 60px;
-    min-width: 270px;
-    min-height: 60px;
-    max-width: 270px;
-    max-height: 60px;
+    width: 240px;
+    height: 34px;
+    min-width: 240px;
+    min-height: 34px;
+    max-width: 240px;
+    max-height: 34px;
     padding: 12px 14px;
     border-radius: 22px;
-    spacing: 6px;
+    spacing: 2px;
 }
 
 .cc-slider-title {
