@@ -1,4 +1,4 @@
-/* Grid system: circle 58px, spacing 9px, two-unit tile 125px. */
+/* Grid system: circle 60px, spacing 10px, two-unit tile 130px. */
 .cc-control-center-menu {
     background-color: transparent;
     border: 0;
@@ -14,21 +14,21 @@
     box-shadow: none;
 }
 
-/* Maximum inner width: 4 circles + 3 gaps = 259px. */
+/* Maximum inner width: 4 circles + 3 gaps = 270px. */
 .cc-content {
-    width: 259px;
+    width: 270px;
     padding: 0;
-    spacing: 9px;
+    spacing: 10px;
 }
 
 .cc-main-grid {
-    width: 259px;
-    spacing: 9px;
+    width: 270px;
+    spacing: 10px;
 }
 
 .cc-left-column {
-    width: 125px;
-    spacing: 9px;
+    width: 130px;
+    spacing: 10px;
 }
 
 .cc-surface {
@@ -42,24 +42,24 @@
     background-color: transparent;
 }
 
-/* Pill = (2 circles + 1 gap) × 1 circle = 125 × 58px. */
+/* Pill = 2 circles + 1 gap by 1 circle = 130 × 60px. */
 .cc-wifi-tile,
 .cc-focus-tile {
-    width: 125px;
-    height: 58px;
-    min-width: 125px;
-    min-height: 58px;
-    max-width: 125px;
-    max-height: 58px;
+    width: 130px;
+    height: 60px;
+    min-width: 130px;
+    min-height: 60px;
+    max-width: 130px;
+    max-height: 60px;
     padding: 0 6px;
-    border-radius: 29px;
+    border-radius: 30px;
     spacing: 5px;
 }
 
 .cc-symbol-disc {
     width: 46px;
     height: 46px;
-    border-radius: 29px;
+    border-radius: 30px;
     background-color: rgba(255, 255, 255, 0.18);
     padding: 0;
 }
@@ -79,20 +79,20 @@
     font-size: 8px;
 }
 
-/* Circle = 58 × 58px; circle row = 2 circles + 1 gap = 125px. */
+/* Circle = 60 × 60px; circle row = 2 circles + 1 gap = 130px. */
 .cc-circle-row {
-    width: 125px;
-    spacing: 9px;
+    width: 130px;
+    spacing: 10px;
 }
 
 .cc-round-control {
-    width: 58px;
-    height: 58px;
-    min-width: 58px;
-    min-height: 58px;
-    max-width: 58px;
-    max-height: 58px;
-    border-radius: 29px;
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    min-height: 60px;
+    max-width: 60px;
+    max-height: 60px;
+    border-radius: 30px;
     padding: 0;
     background-color: rgba(0, 170, 205, 0.54);
     border: 1px solid rgba(160, 245, 255, 0.52);
@@ -107,14 +107,14 @@
     color: #ffffff;
 }
 
-/* Rounded square = (2 circles + 1 gap)² = 125 × 125px. */
+/* Rounded square = (2 circles + 1 gap)² = 130 × 130px. */
 .cc-media-column {
-    width: 125px;
+    width: 130px;
     spacing: 10px;
 }
 
 .cc-media-actions {
-    width: 125px;
+    width: 130px;
     spacing: 10px;
 }
 
@@ -129,14 +129,14 @@
 }
 
 .cc-media-tile {
-    width: 125px;
+    width: 130px;
     height: 125px;
-    min-width: 125px;
+    min-width: 130px;
     min-height: 125px;
-    max-width: 125px;
+    max-width: 130px;
     max-height: 125px;
     padding: 0;
-    border-radius: 29px;
+    border-radius: 30px;
     spacing: 5px;
 }
 
@@ -171,13 +171,13 @@
     color: #eaffff;
 }
 
-/* Full-width rows span the same four-column grid. */
+/* Full-width rows span the same four-column grid (270px). */
 .cc-slider-tile {
-    width: 259px;
+    width: 270px;
     height: 60px;
-    min-width: 259px;
+    min-width: 270px;
     min-height: 60px;
-    max-width: 259px;
+    max-width: 270px;
     max-height: 60px;
     padding: 0 11px;
     border-radius: 22px;
@@ -214,24 +214,24 @@
     width: 72%;
 }
 
-/* Four shortcut circles = 4 circles + 3 gaps = 259px. */
+/* Four shortcut circles = 4 circles + 3 gaps = 270px. */
 .cc-shortcuts {
-    width: 259px;
-    spacing: 9px;
+    width: 270px;
+    spacing: 10px;
 }
 
 .cc-shortcuts .cc-round-control {
-    width: 58px;
-    height: 58px;
-    min-width: 58px;
-    min-height: 58px;
-    max-width: 58px;
-    max-height: 58px;
-    border-radius: 29px;
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    min-height: 60px;
+    max-width: 60px;
+    max-height: 60px;
+    border-radius: 30px;
 }
 
 .cc-edit-control-row {
-    width: 259px;
+    width: 270px;
 }
 
 .cc-edit-control-button {
