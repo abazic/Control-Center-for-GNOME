@@ -272,3 +272,37 @@
     font-size: 10px;
     font-weight: 600;
 }
+
+
+/* Native GNOME Quick Settings tiles hosted inside Control Center. */
+.cc-native-quick-settings {
+    width: 270px;
+    spacing: 8px;
+}
+
+.cc-native-quick-settings.quick-settings-size-small .quick-toggle {
+    min-height: 42px;
+    padding: 4px 7px;
+}
+
+.cc-native-quick-settings.quick-settings-size-small .quick-slider {
+    min-height: 34px;
+}
+
+.cc-native-quick-settings.quick-settings-size-medium .quick-toggle {
+    min-height: 54px;
+    padding: 7px 10px;
+}
+
+.cc-native-quick-settings.quick-settings-size-medium .quick-slider {
+    min-height: 42px;
+}
+
+.cc-native-quick-settings.quick-settings-size-large .quick-toggle {
+    min-height: 68px;
+    padding: 10px 12px;
+}
+
+.cc-native-quick-settings.quick-settings-size-large .quick-slider {
+    min-height: 52px;
+}
