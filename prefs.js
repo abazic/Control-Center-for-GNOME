@@ -15,13 +15,13 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
 
         const appearanceGroup = new Adw.PreferencesGroup({
             title: 'Control size',
-            description: 'Choose the default size for tiles in the integrated Quick Settings area.',
+            description: 'Choose the default tile size used by the Control Center layout.',
         });
 
         const sizeModel = Gtk.StringList.new(['Small', 'Medium', 'Large']);
         const sizeRow = new Adw.ComboRow({
             title: 'Button size',
-            subtitle: 'Small is the default and most compact layout.',
+            subtitle: 'Small is the default size (60 × 60 px). Medium uses 130 × 60 px pills; Large uses 130 × 130 px squares.',
             model: sizeModel,
         });
 
@@ -38,12 +38,12 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
         page.add(appearanceGroup);
 
         const integrationGroup = new Adw.PreferencesGroup({
-            title: 'Quick Settings integration',
+            title: 'System integration',
             description: 'Control Center hosts the live GNOME Quick Settings grid and compatible extension items. Extensions with unrelated custom popups are not enumerable through this integration.',
         });
         const compatibilityRow = new Adw.ActionRow({
-            title: 'Native Quick Settings replacement',
-            subtitle: 'The original panel entry is hidden while Control Center is enabled and restored when it is disabled.',
+            title: 'GNOME Quick Settings replacement',
+            subtitle: 'The native Quick Settings panel indicator is hidden while Control Center is enabled and restored when it is disabled. Native controls are not duplicated inside this interface.',
         });
         compatibilityRow.add_prefix(new Gtk.Image({
             icon_name: 'view-grid-symbolic',
