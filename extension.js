@@ -8,7 +8,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 const PILL_CLASS = 'cc-pill bms-popup-blur-target';
 
-function createIcon(iconName, size = 20) {
+function makeIcon(iconName, size = 20) {
     return new St.Icon({
         icon_name: iconName,
         icon_size: size,
@@ -16,11 +16,50 @@ function createIcon(iconName, size = 20) {
     });
 }
 
-function createPill({icon, title, subtitle, styleClass = ''}) {
+function makeLabel(text, styleClass) {
+    return new St.Label({
+        text,
+        x_expand: true,
+        style_class: styleClass,
+    });
+}
+
+/* Every pill is an independent Blur my Shell surface. */
+function makePill({icon, title, subtitle, extraClass = ''}) {
     const pill = new St.BoxLayout({
         vertical: true,
         x_expand: true,
-        style_class: `${PILL_CLASS} ${styleClass}`.trim(),
+        style_class: `${PILL_CLASS} ${extraClass}`.trim(),
+    });
+
+    const row = new St.BoxLayout({
+        vertical: false,
+        x_expand: true,
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: 'cc-pill-header',
+    });
+    row.add_child(makeIcon(icon));
+
+    const labels = new St.BoxLayout({
+        vertical: true,
+        x_expand: true,
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: 'cc-pill-labels',
+    });
+    labels.add_child(makeLabel(title, 'cc-pill-title'));
+    if (subtitle)
+        labels.add_child(makeLabel(subtitle, 'cc-pill-subtitle'));
+
+    row.add_child(labels);
+    pill.add_child(row);
+    return pill;
+}
+
+function makeMediaPill() {
+    const pill = new St.BoxLayout({
+        vertical: true,
+        x_expand: true,
+        style_class: `${PILL_CLASS} cc-media-pill`,
     });
 
     const header = new St.BoxLayout({
@@ -29,69 +68,23 @@ function createPill({icon, title, subtitle, styleClass = ''}) {
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-pill-header',
     });
-    header.add_child(createIcon(icon));
+    header.add_child(makeIcon('audio-x-generic-symbolic', 22));
 
     const labels = new St.BoxLayout({
         vertical: true,
         x_expand: true,
-        y_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-pill-labels',
     });
-    labels.add_child(new St.Label({
-        text: title,
-        style_class: 'cc-pill-title',
-        x_expand: true,
-    }));
-
-    if (subtitle) {
-        labels.add_child(new St.Label({
-            text: subtitle,
-            style_class: 'cc-pill-subtitle',
-            x_expand: true,
-        }));
-    }
-
+    labels.add_child(makeLabel('Not Playing', 'cc-pill-title'));
+    labels.add_child(makeLabel('Media controls preview', 'cc-pill-subtitle'));
     header.add_child(labels);
     pill.add_child(header);
-    return pill;
-}
-
-function createMediaPill() {
-    const pill = new St.BoxLayout({
-        vertical: true,
-        x_expand: true,
-        style_class: `${PILL_CLASS} cc-media-pill`,
-    });
-
-    const top = new St.BoxLayout({
-        vertical: false,
-        x_expand: true,
-        y_align: Clutter.ActorAlign.CENTER,
-    });
-    top.add_child(createIcon('audio-x-generic-symbolic', 22));
-
-    const labels = new St.BoxLayout({
-        vertical: true,
-        x_expand: true,
-        style_class: 'cc-pill-labels',
-    });
-    labels.add_child(new St.Label({
-        text: 'Not Playing',
-        style_class: 'cc-pill-title',
-    }));
-    labels.add_child(new St.Label({
-        text: 'Media controls will appear here',
-        style_class: 'cc-pill-subtitle',
-    }));
-    top.add_child(labels);
-    pill.add_child(top);
 
     const controls = new St.BoxLayout({
         vertical: false,
         x_align: Clutter.ActorAlign.CENTER,
         style_class: 'cc-media-controls',
     });
-
     for (const iconName of [
         'media-skip-backward-symbolic',
         'media-playback-start-symbolic',
@@ -103,13 +96,14 @@ function createMediaPill() {
             style_class: 'cc-media-control-icon',
         }));
     }
-
     pill.add_child(controls);
     return pill;
 }
 
 export default class ControlCenterExtension extends Extension {
     enable() {
+        console.debug(`${this.metadata.name}: enabling`);
+
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
         this._indicator.add_child(new St.Icon({
             icon_name: 'view-grid-symbolic',
@@ -122,10 +116,7 @@ export default class ControlCenterExtension extends Extension {
     }
 
     _buildMenu() {
-        const section = new PopupMenu.PopupMenuSection();
-        this._indicator.menu.addMenuItem(section);
-
-        const menuItem = new PopupMenu.PopupBaseMenuItem({
+        const item = new PopupMenu.PopupBaseMenuItem({
             reactive: false,
             can_focus: false,
             style_class: 'cc-menu-item',
@@ -136,70 +127,66 @@ export default class ControlCenterExtension extends Extension {
             style_class: 'cc-content',
         });
 
-        const connectivityRow = new St.BoxLayout({
+        const connectivity = new St.BoxLayout({
             vertical: false,
             style_class: 'cc-pill-row',
         });
-        connectivityRow.add_child(createPill({
+        connectivity.add_child(makePill({
             icon: 'network-wireless-signal-excellent-symbolic',
             title: 'Wi-Fi',
-            subtitle: 'System integration pending',
+            subtitle: 'Coming soon',
         }));
-        connectivityRow.add_child(createPill({
+        connectivity.add_child(makePill({
             icon: 'bluetooth-active-symbolic',
             title: 'Bluetooth',
-            subtitle: 'System integration pending',
+            subtitle: 'Coming soon',
         }));
-        content.add_child(connectivityRow);
+        content.add_child(connectivity);
 
-        content.add_child(createMediaPill());
+        content.add_child(makeMediaPill());
 
-        const modesRow = new St.BoxLayout({
+        const modes = new St.BoxLayout({
             vertical: false,
             style_class: 'cc-pill-row',
         });
-        modesRow.add_child(createPill({
+        modes.add_child(makePill({
             icon: 'airplane-mode-symbolic',
             title: 'Airplane Mode',
-            subtitle: 'System integration pending',
+            subtitle: 'Coming soon',
         }));
-        modesRow.add_child(createPill({
-            icon: 'moon-symbolic',
+        modes.add_child(makePill({
+            icon: 'weather-clear-night-symbolic',
             title: 'Focus',
             subtitle: 'Do Not Disturb',
         }));
-        content.add_child(modesRow);
+        content.add_child(modes);
 
-        content.add_child(createPill({
+        content.add_child(makePill({
             icon: 'display-brightness-symbolic',
             title: 'Display',
-            subtitle: 'Brightness control — coming next',
-            styleClass: 'cc-wide-pill',
+            subtitle: 'Brightness control coming soon',
+            extraClass: 'cc-wide-pill',
         }));
-
-        content.add_child(createPill({
+        content.add_child(makePill({
             icon: 'audio-volume-high-symbolic',
             title: 'Sound',
-            subtitle: 'Volume control — coming next',
-            styleClass: 'cc-wide-pill',
+            subtitle: 'Volume control coming soon',
+            extraClass: 'cc-wide-pill',
         }));
 
         const footer = new St.BoxLayout({
-            vertical: false,
             x_align: Clutter.ActorAlign.CENTER,
             style_class: 'cc-footer',
         });
-        footer.add_child(new St.Label({
-            text: 'Control Center · Preview',
-            style_class: 'cc-footer-label',
-        }));
+        footer.add_child(makeLabel('CONTROL CENTER  ·  PREVIEW', 'cc-footer-label'));
         content.add_child(footer);
 
-        menuItem.add_child(content);
-        section.addMenuItem(menuItem);
+        item.add_child(content);
+        this._indicator.menu.addMenuItem(item);
     }
 
     disable() {
+        console.debug(`${this.metadata.name}: disabling`);
         this._indicator?.destroy();
         this._indicator = null;
     }
