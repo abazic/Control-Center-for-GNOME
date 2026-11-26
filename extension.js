@@ -37,16 +37,15 @@ function makeWifiTile() {
     const tile = makeSurface('cc-wifi-tile');
     tile.set_size(GRID_UNIT, CIRCLE);
     tile.set_style(`width: ${GRID_UNIT}px; min-width: ${GRID_UNIT}px; max-width: ${GRID_UNIT}px; height: ${CIRCLE}px; min-height: ${CIRCLE}px; max-height: ${CIRCLE}px; border-radius: ${CIRCLE / 2}px; padding: 0 ${PILL_INSET}px;`);
-    const symbol = new St.BoxLayout({
+    const symbol = new St.Widget({
+        layout_manager: new Clutter.BinLayout(),
         style_class: 'cc-symbol-disc',
-        x_align: Clutter.ActorAlign.CENTER,
-        y_align: Clutter.ActorAlign.CENTER,
     });
     symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
     symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
     const symbolIcon = icon('network-wireless-signal-excellent-symbolic', SYMBOL_ICON_SIZE);
-    symbolIcon.x_align = Clutter.ActorAlign.CENTER;
-    symbolIcon.y_align = Clutter.ActorAlign.CENTER;
+    symbolIcon.set_x_align(Clutter.ActorAlign.CENTER);
+    symbolIcon.set_y_align(Clutter.ActorAlign.CENTER);
     symbol.add_child(symbolIcon);
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
@@ -78,16 +77,15 @@ function makeFocusTile() {
     const tile = makeSurface('cc-focus-tile');
     tile.set_size(GRID_UNIT, CIRCLE);
     tile.set_style(`width: ${GRID_UNIT}px; min-width: ${GRID_UNIT}px; max-width: ${GRID_UNIT}px; height: ${CIRCLE}px; min-height: ${CIRCLE}px; max-height: ${CIRCLE}px; border-radius: ${CIRCLE / 2}px; padding: 0 ${PILL_INSET}px;`);
-    const symbol = new St.BoxLayout({
+    const symbol = new St.Widget({
+        layout_manager: new Clutter.BinLayout(),
         style_class: 'cc-symbol-disc',
-        x_align: Clutter.ActorAlign.CENTER,
-        y_align: Clutter.ActorAlign.CENTER,
     });
     symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
     symbol.set_style(`width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px;`);
     const symbolIcon = icon('weather-clear-night-symbolic', SYMBOL_ICON_SIZE);
-    symbolIcon.x_align = Clutter.ActorAlign.CENTER;
-    symbolIcon.y_align = Clutter.ActorAlign.CENTER;
+    symbolIcon.set_x_align(Clutter.ActorAlign.CENTER);
+    symbolIcon.set_y_align(Clutter.ActorAlign.CENTER);
     symbol.add_child(symbolIcon);
     const copy = new St.BoxLayout({
         orientation: Clutter.Orientation.VERTICAL,
