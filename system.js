@@ -1,6 +1,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gvc from 'gi://Gvc';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const NM_NAME = 'org.freedesktop.NetworkManager';
 const NM_PATH = '/org/freedesktop/NetworkManager';
@@ -52,6 +53,7 @@ export class SystemController {
     constructor(onStateChanged = () => {}) {
         this._onStateChanged = onStateChanged;
         this._signals = [];
+        this._destroyed = false;
         this._state = {
             brightnessAvailable: false,
             brightness: 0.65,
@@ -83,7 +85,8 @@ export class SystemController {
     }
 
     _emit() {
-        this._onStateChanged(this.state);
+        if (!this._destroyed)
+            this._onStateChanged(this.state);
     }
 
     _initFocus() {
@@ -117,23 +120,27 @@ export class SystemController {
     }
 
     _initBrightness() {
+        // GNOME 49+ exposes brightness through BrightnessManager. The
+        // org.gnome.Shell.Brightness D-Bus interface only reports whether
+        // brightness control exists; it does not expose a Brightness property.
         try {
-            this._brightness = Gio.DBusProxy.new_for_bus_sync(
-                Gio.BusType.SESSION,
-                Gio.DBusProxyFlags.NONE,
-                null,
-                'org.gnome.Shell.Brightness',
-                '/org/gnome/Shell/Brightness',
-                'org.gnome.Shell.Brightness',
-                null
-            );
+            this._brightness = Main.brightnessManager?.globalScale ?? null;
+            if (!this._brightness) {
+                this._state.brightnessAvailable = false;
+                this._emit();
+                return;
+            }
+
             this._refreshBrightness();
             this._signals.push([
                 this._brightness,
-                this._brightness.connect('g-properties-changed', () => this._refreshBrightness()),
+                this._brightness.connect('notify::value', () => this._refreshBrightness()),
             ]);
         } catch (error) {
+            this._brightness = null;
+            this._state.brightnessAvailable = false;
             logError(error, 'GNOME Shell brightness control is unavailable');
+            this._emit();
         }
     }
 
@@ -141,12 +148,8 @@ export class SystemController {
         if (!this._brightness)
             return;
 
-        this._state.brightnessAvailable = Boolean(unpackBoolean(
-            this._brightness.get_cached_property('HasBrightnessControl')
-        ));
-        const value = this._brightness.get_cached_property('Brightness');
-        if (value)
-            this._state.brightness = Math.max(0, Math.min(1, value.deep_unpack()));
+        this._state.brightnessAvailable = true;
+        this._state.brightness = Math.max(0, Math.min(1, this._brightness.value));
         this._emit();
     }
 
@@ -154,12 +157,7 @@ export class SystemController {
         if (!this._brightness || !this._state.brightnessAvailable)
             return;
 
-        setProperty(
-            this._brightness,
-            'org.gnome.Shell.Brightness',
-            'Brightness',
-            new GLib.Variant('d', Math.max(0, Math.min(1, value)))
-        );
+        this._brightness.value = Math.max(0, Math.min(1, value));
     }
 
     _initNetworkManager() {
@@ -270,7 +268,6 @@ export class SystemController {
                 Gio.DBusObjectManagerClientFlags.DO_NOT_AUTO_START,
                 BLUEZ_NAME,
                 BLUEZ_ROOT,
-                null,
                 null,
                 null
             );
@@ -459,6 +456,7 @@ export class SystemController {
     }
 
     destroy() {
+        this._destroyed = true;
         for (const [object, id] of this._signals) {
             try {
                 object.disconnect(id);
