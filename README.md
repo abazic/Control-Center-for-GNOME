@@ -17,6 +17,8 @@ A macOS-inspired GNOME Shell extension with individually blurred Liquid Glass pi
 - MPRIS media controls for the active session player (previous, play/pause, next, title, and artist).
 - Airplane Mode coordination for Wi-Fi, Bluetooth, and WWAN when the modem exposes that control; the previous radio states are restored when disabling it.
 - Audio output switching through GVC; click the speaker shortcut to cycle through available output sinks.
+- Mirror shortcut opens the device list from the optional `Mirror` GNOME extension (`mirror@distro.com`).
+- Timer shortcut opens the optional `Caffeine` GNOME extension's timer menu (`caffeine@patapon.info`); its active state is reflected in the Control Center.
 - Each pill has its own `bms-popup-blur-target` class.
 - Transparent popup/layout shell with a translucent fallback style on individual pills.
 - GNOME Shell ES module extension structure.
@@ -93,6 +95,8 @@ gnome-shell --version
 - [x] Airplane Mode coordination where supported (NetworkManager Wi-Fi/WWAN + BlueZ Bluetooth).
 - [x] MPRIS media controls (active player selection and metadata).
 - [x] Audio output switching through GVC (cycle available output sinks).
+- [x] Mirror extension hand-off (`mirror@distro.com`; opens its native device menu).
+- [x] Caffeine extension hand-off (`caffeine@patapon.info`; opens its timer menu and tracks active state).
 - [ ] GNOME Settings shortcuts.
 
 ## Project structure
