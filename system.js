@@ -65,6 +65,7 @@ export class SystemController {
             bluetoothEnabled: false,
             focusEnabled: false,
             volume: 0,
+            outputDevices: [],
             muted: false,
             audioAvailable: false,
         };
@@ -219,8 +220,7 @@ export class SystemController {
         if (!this._state.airplaneAvailable)
             return;
         const bluetoothOff = !this._state.bluetoothAvailable || !this._state.bluetoothEnabled;
-        this._state.airplaneEnabled = !this._state.wifiEnabled &&
-            (!this._state.wwanAvailable || !this._state.wwanEnabled) && bluetoothOff;
+        this._state.airplaneEnabled = Boolean(this._airplaneSnapshot);
     }
 
     toggleAirplaneMode() {
