@@ -387,12 +387,13 @@ export default class ControlCenterExtension extends Extension {
         const editControlLeftSpacer = new St.Widget({x_expand: true});
         const editControlRightSpacer = new St.Widget({x_expand: true});
         const editControlButton = new St.Button({
-            reactive: false,
-            can_focus: false,
-            track_hover: false,
+            reactive: true,
+            can_focus: true,
+            track_hover: true,
             style_class: `${SURFACE} cc-edit-control-button`,
             accessible_name: 'Edit Control',
         });
+        editControlButton.connect('clicked', () => this._openPreferences());
         editControlButton.set_size(86, 21);
         editControlButton.set_child(new St.Label({
             text: 'Edit Control',
@@ -458,6 +459,11 @@ export default class ControlCenterExtension extends Extension {
                 muteIcon.icon_name = state.muted
                     ? 'audio-volume-muted-symbolic' : 'audio-volume-high-symbolic';
         }
+    }
+
+    _openPreferences() {
+        this._indicator?.menu.close();
+        Main.extensionManager.openExtensionPrefs(this.uuid, '', {});
     }
 
     _initCaffeineIntegration() {
