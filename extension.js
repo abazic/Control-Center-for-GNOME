@@ -117,8 +117,28 @@ function makeCircle(name, accessibleName, onClick = null) {
         accessible_name: accessibleName,
     });
     button.set_size(SMALL, SMALL);
+
+    const content = new St.BoxLayout({
+        x_expand: true,
+        y_expand: true,
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: 'cc-control-content',
+    });
+    const symbol = new St.Widget({
+        layout_manager: new Clutter.BinLayout(),
+        style_class: 'cc-symbol-disc cc-control-symbol',
+    });
+    symbol.set_size(SYMBOL_SIZE, SYMBOL_SIZE);
+    symbol.set_style(`width: ${SYMBOL_SIZE}px; min-width: ${SYMBOL_SIZE}px; max-width: ${SYMBOL_SIZE}px; height: ${SYMBOL_SIZE}px; min-height: ${SYMBOL_SIZE}px; max-height: ${SYMBOL_SIZE}px; border-radius: 29px;`);
     button._ccIcon = icon(name, 25);
-    button.set_child(button._ccIcon);
+    button._ccIcon.set_x_align(Clutter.ActorAlign.CENTER);
+    button._ccIcon.set_y_align(Clutter.ActorAlign.CENTER);
+    symbol.add_child(button._ccIcon);
+    button._ccLabel = label(accessibleName, 'cc-control-label');
+    content.add_child(symbol);
+    content.add_child(button._ccLabel);
+    button.set_child(content);
+    button._ccSymbol = symbol;
     if (onClick)
         button.connect('clicked', onClick);
     return button;
@@ -513,10 +533,8 @@ export default class ControlCenterExtension extends Extension {
 
         if (this._airplaneButton) {
             const glyph = this._airplaneButton._ccIcon;
-            if (glyph) {
-                glyph.icon_name = state.airplaneEnabled
-                    ? 'airplane-mode-symbolic' : 'network-wireless-signal-excellent-symbolic';
-            }
+            if (glyph)
+                glyph.icon_name = 'airplane-mode-symbolic';
             this._airplaneButton.accessible_name = state.airplaneEnabled
                 ? 'Airplane Mode On' : 'Airplane Mode Off';
             this._airplaneButton.reactive = state.airplaneAvailable;
@@ -629,6 +647,12 @@ export default class ControlCenterExtension extends Extension {
         actor.set_size(width, height);
         const radius = size === 'large' ? 29 : height / 2;
         actor.set_style(`width: ${width}px; min-width: ${width}px; max-width: ${width}px; height: ${height}px; min-height: ${height}px; max-height: ${height}px; border-radius: ${radius}px;`);
+        if (actor._ccIcon) {
+            actor._ccIcon.set_icon_size(size === 'small' ? 25 : SYMBOL_ICON_SIZE);
+            actor._ccLabel?.show();
+            if (size === 'small')
+                actor._ccLabel?.hide();
+        }
         for (const option of ['small', 'medium', 'large'])
             actor.remove_style_class_name(`cc-tile-size-${option}`);
         actor.add_style_class_name(`cc-tile-size-${size}`);
