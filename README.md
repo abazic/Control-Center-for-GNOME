@@ -94,27 +94,34 @@ The integration follows the [Blur my Shell extension integration guide](https://
 - NetworkManager for Wi-Fi, BlueZ for Bluetooth, and GVC / a PulseAudio-compatible server for audio controls.
 - [Blur my Shell](https://extensions.gnome.org/extension/)
   is optional and only needed for the blur effect.
+- [Blur my Shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+  is optional and only needed for the blur effect.
 
 ### Build and install
-
-Clone the repository and package the extension:
 
 ```bash
 git clone https://github.com/abazic/Control-Center-for-GNOME.git
 cd Control-Center-for-GNOME
 
-glib-compile-schemas schemas/
-
 mkdir -p dist
 gnome-extensions pack --force \
+  --extra-source=system.js \
+  --extra-source=media.js \
   --extra-source=control-center-symbolic.svg \
   --out-dir=dist .
 
 gnome-extensions install --force \
   dist/control-center@abazic.github.io.shell-extension.zip
+```
 
+**Log out and log back in** so GNOME Shell picks up the extension, then enable it:
+
+```bash
 gnome-extensions enable control-center@abazic.github.io
 ```
+
+To update, run `git pull`, repeat the `pack` and `install` commands,
+then log out and back in.
 
 After installation, the Control Center icon should appear in the GNOME top panel. Select it to open the popup.
 
