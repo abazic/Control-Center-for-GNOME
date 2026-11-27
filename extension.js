@@ -647,6 +647,7 @@ export default class ControlCenterExtension extends Extension {
         root.add_child(this._buildPopup());
         this._root = root;
         item.add_child(root);
+        this._menuItem = item;
         this._indicator.menu.addMenuItem(item);
         this._syncSystemState();
         this._applyAllTileSizes();
@@ -1225,36 +1226,48 @@ export default class ControlCenterExtension extends Extension {
 
     disable() {
         this._destroying = true;
+
         this._unwatchToggleRegistry();
         this._closeMenuOverlay();
         this._watchExtraToggles(false);
-        this._extraTiles = [];
+
         if (this._settings && this._hideQuickSettingsSignal)
             this._settings.disconnect(this._hideQuickSettingsSignal);
         this._hideQuickSettingsSignal = 0;
+
         for (const signal of this._tileSizeSignals ?? [])
             this._settings?.disconnect(signal);
         this._tileSizeSignals = [];
         this._tileSizeKeys = null;
-        this._settings = null;
+
+        if (this._caffeineSettings && this._caffeineSignal)
+            this._caffeineSettings.disconnect(this._caffeineSignal);
+        this._caffeineSignal = 0;
+        this._caffeineSettings = null;
+
         this._restoreNativeQuickSettings();
-        this._settings = null;
+
+        this._mediaController?.destroy();
+        this._mediaController = null;
+        this._controller?.destroy();
+        this._controller = null;
+
+        if (this._indicator && this._menuStateSignal)
+            this._indicator.menu.disconnect(this._menuStateSignal);
+        this._menuStateSignal = 0;
+
+        // Destroy the menu item while its widget tree is still owned by the menu.
+        // This also destroys the content, grid, popup and dynamically-created tiles.
+        this._menuItem?.destroy();
+        this._menuItem = null;
+        this._extraTiles = [];
         this._content = null;
         this._grid = null;
         this._root = null;
         this._popup = null;
         this._editControlRow = null;
-        if (this._caffeineSettings && this._caffeineSignal)
-            this._caffeineSettings.disconnect(this._caffeineSignal);
-        this._caffeineSignal = 0;
-        this._caffeineSettings = null;
-        this._mediaController?.destroy();
-        this._mediaController = null;
-        this._controller?.destroy();
-        this._controller = null;
-        if (this._indicator && this._menuStateSignal)
-            this._indicator.menu.disconnect(this._menuStateSignal);
-        this._menuStateSignal = 0;
+
+        this._settings = null;
         this._indicator?.destroy();
         this._indicator = null;
     }
