@@ -894,7 +894,7 @@ export default class ControlCenterExtension extends Extension {
             this._settings?.get_boolean('hide-native-quick-settings'));
     }
 
-    // Ikon tetap tampil di panel, tetapi popup-nya tidak bisa dibuka.
+    // Keep the panel icon visible while blocking pointer and keyboard activation.
     _setQuickSettingsLocked(quickSettings, locked) {
         quickSettings.container.show();
         quickSettings.reactive = !locked;
@@ -1056,7 +1056,6 @@ export default class ControlCenterExtension extends Extension {
 
     // Toggle Quick Settings yang belum punya tile khusus.
     _findExtraToggles() {
-        const quickSettings = getNativeQuickSettings();
         const handled = new Set([
             getNativeQuickSettingsToggle('wifi'),
             getNativeQuickSettingsToggle('bluetooth'),
@@ -1119,7 +1118,6 @@ export default class ControlCenterExtension extends Extension {
 
     // Keterangan diambil dari toggle asli, misalnya nama Wi-Fi atau profil daya.
     _syncSubtitles() {
-        const quickSettings = getNativeQuickSettings();
         const first = indicator => indicator?.quickSettingsItems?.[0];
         const extension = uuid => Main.extensionManager.lookup(uuid)?.stateObj;
         const entries = [
