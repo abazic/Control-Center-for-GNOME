@@ -1,0 +1,41 @@
+name: Release GNOME Extension
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish extension
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install GNOME extension tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gnome-shell-common
+
+      - name: Package extension
+        run: |
+          mkdir -p dist
+          gnome-extensions pack --force \
+            --extra-source=system.js \
+            --extra-source=media.js \
+            --extra-source=control-center-symbolic.svg \
+            --out-dir=dist .
+
+          test -s dist/control-center@abazic.github.io.shell-extension.zip
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/control-center@abazic.github.io.shell-extension.zip
