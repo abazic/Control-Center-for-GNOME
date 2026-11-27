@@ -884,6 +884,8 @@ export default class ControlCenterExtension extends Extension {
         const quickSettings = getNativeQuickSettings();
         const container = quickSettings?.container;
         if (!container) {
+            if (this._nativeQuickSettings)
+                this._restoreNativeQuickSettings();
             if (this._settings?.get_boolean('hide-native-quick-settings'))
                 this._queueQuickSettingsIntegration();
             return;
