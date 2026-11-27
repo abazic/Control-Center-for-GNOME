@@ -505,8 +505,7 @@
 }
 
 /* Aktif, ukuran Medium/Large: lingkaran ikon putih, badan tetap transparan. */
-.cc-surface.cc-control-active.cc-tile-size-medium .cc-symbol-disc,
-.cc-surface.cc-control-active.cc-tile-size-large .cc-symbol-disc {
+.cc-surface.cc-control-active.cc-tile-size-medium .cc-symbol-disc {
     background-color: #ffffff !important;
 }
 
@@ -520,4 +519,30 @@
 #panel .panel-button.cc-indicator:focus {
     background-color: transparent !important;
     box-shadow: none !important;
+}
+
+/* Jarak ikon dan teks pada ukuran Large. */
+.cc-tile-size-large .cc-control-content,
+.cc-wifi-tile.cc-tile-size-large,
+.cc-focus-tile.cc-tile-size-large {
+    spacing: 8px;
+}
+
+/* Large: ikon kiri atas, teks kiri bawah, radius 29px. */
+.cc-subrow { spacing: 3px; }
+.cc-surface.cc-tile-size-large { border-radius: 29px; }
+.cc-tile-size-large .cc-title,
+.cc-round-control.cc-tile-size-large .cc-control-label {
+    font-size: 13px;
+    max-width: 102px;
+}
+.cc-tile-size-large .cc-subtitle { font-size: 11px; }
+.cc-surface.cc-tile-size-large .cc-symbol-disc {
+    background-color: rgba(255, 255, 255, 0.20);
+}
+.cc-surface.cc-control-active.cc-tile-size-large .cc-symbol-disc {
+    background-color: #0a84ff !important;
+}
+.cc-surface.cc-control-active.cc-tile-size-large .cc-symbol-disc .cc-icon {
+    color: #ffffff;
 }
