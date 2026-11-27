@@ -57,11 +57,12 @@ When the custom Control Center popup is open, the extension can discover eligibl
 - A macOS-inspired popup with separate rounded tile surfaces.
 - Optional per-tile blur integration using the `bms-popup-blur-target` class.
 - Translucent CSS fallback styling when Blur my Shell is not installed or not providing blur.
-- Preferences let you choose **Small**, **Medium**, or **Large** sizes independently for Wi-Fi, Bluetooth, Airplane Mode, Focus, Mirror, and Caffeine tiles.
+- **Reorder tiles** — open Preferences → Tiles, then drag a tile using the handle on the left to change its position in the Control Center. Use **Reset Order** to restore the default order.
+- **Per-tile size settings** — choose **Small**, **Medium**, or **Large** independently for each built-in tile and discovered third-party Quick Settings tile.
   - Small: 60 × 60 px
   - Medium: 130 × 60 px
   - Large: 130 × 130 px
-- The Media Player tile currently stays at Large size.
+- Tile positions and size choices are saved in the extension preferences. The popup automatically lays out tiles in the selected order while fitting their chosen sizes into its four-column grid.
 - The **Kunci Quick Settings bawaan** preference locks the native Quick Settings menu while this extension is enabled. The native panel icon remains visible, but its menu cannot be opened. Turn the preference off to restore the native menu.
 
 ## Blur my Shell integration
