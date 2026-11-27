@@ -769,7 +769,7 @@ export default class ControlCenterExtension extends Extension {
             const signal = this._settings.connect(`changed::${key}`, () => {
                 this._applyAllTileSizes();
             });
-            this._tileSizeSignals.push(signal);
+            this._tileSizeSignals.push([this._settings, signal]);
         }
         this._watchToggleRegistry();
     }
@@ -1235,8 +1235,8 @@ export default class ControlCenterExtension extends Extension {
             this._settings.disconnect(this._hideQuickSettingsSignal);
         this._hideQuickSettingsSignal = 0;
 
-        for (const signal of this._tileSizeSignals ?? [])
-            this._settings?.disconnect(signal);
+        for (const [settings, signal] of this._tileSizeSignals ?? [])
+            settings.disconnect(signal);
         this._tileSizeSignals = [];
         this._tileSizeKeys = null;
 
