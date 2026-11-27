@@ -881,7 +881,7 @@ export default class ControlCenterExtension extends Extension {
     }
 
     _syncNativeQuickSettingsVisibility() {
-        const quickSettings = Main.panel.statusArea.quickSettings;
+        const quickSettings = getNativeQuickSettings();
         const container = quickSettings?.container;
         if (!container) {
             if (this._settings?.get_boolean('hide-native-quick-settings'))
@@ -1056,7 +1056,7 @@ export default class ControlCenterExtension extends Extension {
 
     // Toggle Quick Settings yang belum punya tile khusus.
     _findExtraToggles() {
-        const quickSettings = Main.panel.statusArea.quickSettings;
+        const quickSettings = getNativeQuickSettings();
         const handled = new Set([
             getNativeQuickSettingsToggle('wifi'),
             getNativeQuickSettingsToggle('bluetooth'),
@@ -1119,7 +1119,7 @@ export default class ControlCenterExtension extends Extension {
 
     // Keterangan diambil dari toggle asli, misalnya nama Wi-Fi atau profil daya.
     _syncSubtitles() {
-        const quickSettings = Main.panel.statusArea.quickSettings;
+        const quickSettings = getNativeQuickSettings();
         const first = indicator => indicator?.quickSettingsItems?.[0];
         const extension = uuid => Main.extensionManager.lookup(uuid)?.stateObj;
         const entries = [
