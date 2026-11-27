@@ -98,6 +98,27 @@ function styleTile(actor, size) {
     actor.add_style_class_name(`cc-tile-size-${size}`);
 }
 
+// Small: tombol Play saja. Medium: judul dan kontrol. Large: lengkap.
+function styleMediaTile(tile, size) {
+    const small = size === 'small';
+    const large = size === 'large';
+    const padding = small ? '0' : large ? '14px' : '4px 8px';
+    tile.set_style(`border-radius: 29px; padding: ${padding}; spacing: ${large ? 5 : 0}px;`);
+
+    tile._ccHeader.visible = !small;
+    tile._ccHeader.x_align = large ? Clutter.ActorAlign.START : Clutter.ActorAlign.CENTER;
+    tile._ccArtwork.visible = large;
+    tile._ccArtistLabel.visible = large;
+    tile._ccSpacer.visible = large;
+    tile._ccPreviousButton.visible = !small;
+    tile._ccNextButton.visible = !small;
+    tile._ccControls.y_expand = !large;
+    tile._ccControls.y_align = large ? Clutter.ActorAlign.FILL : Clutter.ActorAlign.CENTER;
+    tile._ccPlayButton._ccIcon.icon_size = large || small ? 24 : 18;
+    tile._ccPreviousButton._ccIcon.icon_size = large ? 22 : 16;
+    tile._ccNextButton._ccIcon.icon_size = large ? 22 : 16;
+}
+
 function setLabelWrap(actor, wrap) {
     if (actor instanceof St.Label) {
         actor.clutter_text.line_wrap = wrap;
@@ -406,6 +427,10 @@ function makeMediaTile(onPrevious, onPlayPause, onNext) {
     tile._ccPlayButton = playButton;
     tile._ccPreviousButton = previousButton;
     tile._ccNextButton = nextButton;
+    tile._ccHeader = header;
+    tile._ccArtwork = artwork;
+    tile._ccSpacer = spacer;
+    tile._ccControls = controls;
     tile.add_child(header);
     tile.add_child(spacer);
     tile.add_child(controls);
@@ -745,6 +770,36 @@ export default class ControlCenterExtension extends Extension {
             });
             this._tileSizeSignals.push(signal);
         }
+        this._watchToggleRegistry();
+    }
+
+    // Daftarkan toggle Quick Settings tanpa menunggu Control Center dibuka.
+    _watchToggleRegistry() {
+        const queue = () => {
+            if (this._registrySource)
+                return;
+            this._registrySource = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 2, () => {
+                this._registrySource = 0;
+                const grid = Main.panel.statusArea.quickSettings?.menu?._grid;
+                if (grid && !this._registrySignal) {
+                    this._registryGrid = grid;
+                    this._registrySignal = grid.connect('child-added', queue);
+                }
+                this._syncExtraTiles();
+                return GLib.SOURCE_REMOVE;
+            });
+        };
+        queue();
+    }
+
+    _unwatchToggleRegistry() {
+        if (this._registrySource)
+            GLib.Source.remove(this._registrySource);
+        this._registrySource = 0;
+        if (this._registrySignal)
+            this._registryGrid.disconnect(this._registrySignal);
+        this._registrySignal = 0;
+        this._registryGrid = null;
     }
 
     _applyAllTileSizes() {
@@ -762,14 +817,11 @@ export default class ControlCenterExtension extends Extension {
             ['caffeine', this._caffeineButton],
         ].map(([name, actor]) => {
             const value = this._settings.get_string(this._tileSizeKeys[name]);
-            let size = SPANS[value] ? value : 'small';
-            if (name === 'media') {
-                // Isi Media Player hanya dirancang untuk ukuran Large.
-                size = 'large';
-                actor.set_style('border-radius: 29px; padding: 14px;');
-            } else {
+            const size = SPANS[value] ? value : 'small';
+            if (name === 'media')
+                styleMediaTile(actor, size);
+            else
                 styleTile(actor, size);
-            }
             return {actor, size};
         });
         const extraSizes = this._settings.get_value('extra-tile-sizes').deepUnpack();
@@ -1165,6 +1217,7 @@ export default class ControlCenterExtension extends Extension {
 
     disable() {
         this._destroying = true;
+        this._unwatchToggleRegistry();
         this._closeMenuOverlay();
         this._watchExtraToggles(false);
         this._extraTiles = [];
