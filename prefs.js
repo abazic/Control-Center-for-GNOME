@@ -20,10 +20,10 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
         const sizeValues = ['small', 'medium', 'large'];
         const tilesGroup = new Adw.PreferencesGroup({
             title: 'Tiles',
-            description: 'Seret pegangan di kiri untuk mengubah urutan. Small: 60 × 60 px; Medium: 130 × 60 px; Large: 130 × 130 px.',
+            description: 'Drag the handle on the left to reorder. Small: 60 × 60 px; Medium: 130 × 60 px; Large: 130 × 130 px.',
         });
 
-        // Urutan di sini adalah urutan default.
+        // The order here is the default order.
         const fixedTiles = [
             ['wifi', 'Wi-Fi'],
             ['media', 'Media Player'],
@@ -65,7 +65,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             settings.set_value('extra-tile-sizes', new GLib.Variant('a{ss}', sizes));
         };
 
-        // Pindahkan tile yang diseret ke posisi tile tujuan.
+        // Move the dragged tile to the target tile's position.
         const moveTo = (id, targetId) => {
             const ids = listTiles().map(tile => tile.id);
             const from = ids.indexOf(id);
@@ -81,7 +81,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
         const makeDragHandle = (row, id) => {
             const handle = new Gtk.Image({
                 icon_name: 'list-drag-handle-symbolic',
-                tooltip_text: 'Seret untuk mengubah urutan',
+                tooltip_text: 'Drag to reorder',
             });
             handle.set_cursor_from_name('grab');
 
@@ -92,7 +92,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
                 value.set_string(id);
                 return Gdk.ContentProvider.new_for_value(value);
             });
-            // Bayangan baris mengikuti kursor selama diseret.
+            // A snapshot of the row follows the pointer while dragging.
             source.connect('drag-begin', () =>
                 source.set_icon(new Gtk.WidgetPaintable({widget: row}), 20, 20));
             handle.add_controller(source);
@@ -125,7 +125,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
         };
         rebuild();
 
-        // Disusun ulang setelah klik selesai diproses.
+        // Rebuild after the current event has been handled.
         let pending = 0;
         const queueRebuild = () => {
             pending ||= GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
@@ -146,7 +146,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
         });
 
         const resetButton = new Gtk.Button({
-            label: 'Reset urutan',
+            label: 'Reset Order',
             valign: Gtk.Align.CENTER,
             css_classes: ['flat'],
         });
@@ -159,8 +159,8 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             description: 'Control Center uses its own macOS-inspired interface and controls the same GNOME system services as native Quick Settings.',
         });
         const hideQuickSettingsRow = new Adw.SwitchRow({
-            title: 'Kunci Quick Settings bawaan',
-            subtitle: 'Ikon tetap tampil di panel atas, tetapi menunya tidak bisa dibuka.',
+            title: 'Lock native Quick Settings',
+            subtitle: 'The icon stays in the top panel, but its menu cannot be opened.',
         });
         hideQuickSettingsRow.active = settings.get_boolean('hide-native-quick-settings');
         hideQuickSettingsRow.connect('notify::active', () => {
