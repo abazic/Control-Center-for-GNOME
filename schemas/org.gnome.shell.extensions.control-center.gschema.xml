@@ -58,5 +58,9 @@
       <default>{}</default>
       <summary>Discovered Quick Settings toggles</summary>
     </key>
+    <key name="tile-order" type="as">
+      <default>[]</default>
+      <summary>Order of Control Center tiles</summary>
+    </key>
   </schema>
 </schemalist>
