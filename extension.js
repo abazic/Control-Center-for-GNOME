@@ -889,6 +889,9 @@ export default class ControlCenterExtension extends Extension {
             return;
         }
 
+        if (this._nativeQuickSettings && this._nativeQuickSettings !== quickSettings)
+            this._setQuickSettingsLocked(this._nativeQuickSettings, false);
+
         this._nativeQuickSettings = quickSettings;
         this._setQuickSettingsLocked(quickSettings,
             this._settings?.get_boolean('hide-native-quick-settings'));
@@ -896,25 +899,53 @@ export default class ControlCenterExtension extends Extension {
 
     // Keep the panel icon visible while blocking pointer and keyboard activation.
     _setQuickSettingsLocked(quickSettings, locked) {
-        quickSettings.container.show();
-        quickSettings.reactive = !locked;
-        quickSettings.can_focus = !locked;
-        quickSettings.track_hover = !locked;
-
         const {menu} = quickSettings;
+
         if (locked) {
+            if (this._lockedMenu === menu)
+                return;
+
+            if (this._lockedMenu)
+                this._restoreNativeQuickSettings();
+
+            this._lockedQuickSettingsState = {
+                quickSettings,
+                menu,
+                reactive: quickSettings.reactive,
+                canFocus: quickSettings.can_focus,
+                trackHover: quickSettings.track_hover,
+                hadOwnOpen: Object.prototype.hasOwnProperty.call(menu, 'open'),
+                open: menu.open,
+            };
+
+            quickSettings.container.show();
+            quickSettings.reactive = false;
+            quickSettings.can_focus = false;
+            quickSettings.track_hover = false;
+
             menu.close();
-            // Keluarkan dari pengelola menu panel, agar tidak ikut terbuka saat
-            // kursor digeser dari menu lain.
             Main.panel.menuManager.removeMenu(menu);
-            // Tahan juga pemanggilan langsung, misalnya Super+S.
             menu.open = () => false;
             this._lockedMenu = menu;
-        } else if (this._lockedMenu === menu) {
-            delete menu.open;
-            Main.panel.menuManager.addMenu(menu);
-            this._lockedMenu = null;
+            return;
         }
+
+        if (this._lockedMenu !== menu)
+            return;
+
+        const state = this._lockedQuickSettingsState;
+        if (state?.hadOwnOpen)
+            menu.open = state.open;
+        else
+            delete menu.open;
+
+        quickSettings.reactive = state?.reactive ?? true;
+        quickSettings.can_focus = state?.canFocus ?? true;
+        quickSettings.track_hover = state?.trackHover ?? true;
+        Main.panel.menuManager.addMenu(menu);
+
+        this._lockedMenu = null;
+        this._lockedQuickSettingsState = null;
     }
 
     _restoreNativeQuickSettings() {
