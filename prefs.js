@@ -38,35 +38,45 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             row.connect('notify::selected', () => {
                 settings.set_string(key, sizeValues[row.selected] ?? 'small');
             });
-            if (key === 'media-tile-size') {
-                row.selected = 2;
-                row.sensitive = false;
-                row.subtitle = 'Hanya tersedia dalam ukuran Large';
-            }
             appearanceGroup.add(row);
         }
         page.add(appearanceGroup);
 
         const extraGroup = new Adw.PreferencesGroup({
             title: 'Toggle lainnya',
-            description: 'Toggle dari Quick Settings. Buka Control Center sekali, lalu buka ulang jendela ini bila daftarnya belum lengkap.',
+            description: 'Toggle dari Quick Settings. Daftar ini terisi otomatis saat toggle baru terdeteksi.',
         });
-        const known = settings.get_value('known-toggles').deepUnpack();
-        for (const [id, title] of Object.entries(known)) {
-            const row = new Adw.ComboRow({
-                title,
-                use_markup: false,
-                model: Gtk.StringList.new(['Small', 'Medium', 'Large']),
-            });
-            const sizes = settings.get_value('extra-tile-sizes').deepUnpack();
-            row.selected = Math.max(0, sizeValues.indexOf(sizes[id]));
-            row.connect('notify::selected', () => {
-                const next = settings.get_value('extra-tile-sizes').deepUnpack();
-                next[id] = sizeValues[row.selected] ?? 'small';
-                settings.set_value('extra-tile-sizes', new GLib.Variant('a{ss}', next));
-            });
-            extraGroup.add(row);
-        }
+        const rows = new Map();
+        const addRows = () => {
+            const known = settings.get_value('known-toggles').deepUnpack();
+            for (const [id, title] of Object.entries(known)) {
+                if (rows.has(id)) {
+                    rows.get(id).title = title;
+                    continue;
+                }
+                const row = new Adw.ComboRow({
+                    title,
+                    use_markup: false,
+                    model: Gtk.StringList.new(['Small', 'Medium', 'Large']),
+                });
+                const sizes = settings.get_value('extra-tile-sizes').deepUnpack();
+                row.selected = Math.max(0, sizeValues.indexOf(sizes[id]));
+                row.connect('notify::selected', () => {
+                    const next = settings.get_value('extra-tile-sizes').deepUnpack();
+                    next[id] = sizeValues[row.selected] ?? 'small';
+                    settings.set_value('extra-tile-sizes', new GLib.Variant('a{ss}', next));
+                });
+                extraGroup.add(row);
+                rows.set(id, row);
+            }
+        };
+        addRows();
+        // Toggle baru langsung muncul selagi jendela ini terbuka.
+        const knownSignal = settings.connect('changed::known-toggles', addRows);
+        window.connect('close-request', () => {
+            settings.disconnect(knownSignal);
+            return false;
+        });
         page.add(extraGroup);
 
         const integrationGroup = new Adw.PreferencesGroup({
