@@ -94,8 +94,6 @@ The integration follows the [Blur my Shell extension integration guide](https://
 - NetworkManager for Wi-Fi, BlueZ for Bluetooth, and GVC / a PulseAudio-compatible server for audio controls.
 - [Blur my Shell](https://extensions.gnome.org/extension/)
   is optional and only needed for the blur effect.
-- [Blur my Shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
-  is optional and only needed for the blur effect.
 
 ### Build and install
 
