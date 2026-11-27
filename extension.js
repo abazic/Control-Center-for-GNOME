@@ -180,31 +180,59 @@ function makeSubRow(tile, status) {
     return row;
 }
 
-// Ratakan isi menu GNOME (termasuk section dan submenu) menjadi daftar biasa.
+// PopupMenu does not expose a public iterator or selection-state API.
+// Keep the required Shell-internal lookups in this compatibility adapter.
+function getPopupMenuItems(menu) {
+    return menu?._getMenuItems?.() ?? [];
+}
+
+function isPopupMenuSection(item) {
+    return item instanceof PopupMenu.PopupMenuSection ||
+        typeof item._getMenuItems === 'function';
+}
+
+function getPopupMenuDeviceSection(item) {
+    return item._mainSection ?? null;
+}
+
+function getPopupMenuItemLabel(item) {
+    return item.label?.text ?? item._label?.text ?? '';
+}
+
+function isPopupMenuItemSelected(item) {
+    return Boolean(item._selectedIcon?.visible || item.state ||
+        item._ornament === PopupMenu.Ornament.CHECK ||
+        item._ornament === PopupMenu.Ornament.DOT);
+}
+
+// Flatten GNOME menus, including sections, device groups and submenus.
 function collectMenuEntries(menu, entries = []) {
-    for (const item of menu?._getMenuItems?.() ?? []) {
-        if (item._getMenuItems) { // PopupMenuSection
+    for (const item of getPopupMenuItems(menu)) {
+        if (isPopupMenuSection(item)) {
             if (item.actor.visible)
                 collectMenuEntries(item, entries);
             continue;
         }
+
         if (!item.visible)
             continue;
-        if (item._mainSection) { // pembungkus per perangkat Wi-Fi
-            collectMenuEntries(item._mainSection, entries);
+
+        const deviceSection = getPopupMenuDeviceSection(item);
+        if (deviceSection) {
+            collectMenuEntries(deviceSection, entries);
             continue;
         }
-        if (item.menu) { // submenu
+
+        if (item.menu) {
             collectMenuEntries(item.menu, entries);
             continue;
         }
-        const text = item.label?.text ?? item._label?.text;
+
+        const text = getPopupMenuItemLabel(item);
         if (!text)
-            continue; // separator
-        const selected = Boolean(item._selectedIcon?.visible || item.state ||
-            item._ornament === PopupMenu.Ornament.CHECK ||
-            item._ornament === PopupMenu.Ornament.DOT);
-        entries.push({item, text, selected});
+            continue;
+
+        entries.push({item, text, selected: isPopupMenuItemSelected(item)});
     }
     return entries;
 }
