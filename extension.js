@@ -30,6 +30,39 @@ const CAFFEINE_TOGGLE_KEY = 'cli-toggle';
 const SPANS = {small: [1, 1], medium: [2, 1], large: [2, 2]};
 const STEP = SMALL + SPACING;
 
+// GNOME Shell does not expose a stable API for reading built-in Quick Settings
+// toggles. Keep those version-sensitive lookups in this adapter.
+function getNativeQuickSettings() {
+    return Main.panel.statusArea.quickSettings ?? null;
+}
+
+function getNativeQuickSettingsGrid() {
+    return getNativeQuickSettings()?.menu?._grid ?? null;
+}
+
+function getNativeQuickSettingsToggle(name) {
+    const quickSettings = getNativeQuickSettings();
+    switch (name) {
+    case 'wifi':
+        return quickSettings?._network?._wirelessToggle ?? null;
+    case 'bluetooth':
+        return quickSettings?._bluetooth?.quickSettingsItems?.[0] ?? null;
+    case 'sound':
+        return quickSettings?._volumeOutput?.quickSettingsItems?.[0] ?? null;
+    case 'power':
+        return quickSettings?._powerProfiles?.quickSettingsItems?.[0] ?? null;
+    case 'focus':
+        return quickSettings?._doNotDisturb?.quickSettingsItems?.[0] ?? null;
+    case 'airplane':
+        return quickSettings?._rfkill?.quickSettingsItems?.[0] ?? null;
+    case 'background-apps':
+        return quickSettings?._backgroundApps?.quickSettingsItems?.[0] ?? null;
+    default:
+        return null;
+    }
+}
+
+
 // Grid 4 kolom: setiap tile menempati slot kosong pertama yang muat.
 function placeTiles(grid, tiles) {
     const used = new Set();
@@ -543,7 +576,7 @@ export default class ControlCenterExtension extends Extension {
 
     // Posisi default: tepat di sebelah kanan ikon Quick Settings.
     _placeAfterQuickSettings() {
-        const anchor = Main.panel.statusArea.quickSettings?.container;
+        const anchor = getNativeQuickSettings()?.container;
         const box = anchor?.get_parent();
         const {container} = this._indicator;
         if (!box)
@@ -732,7 +765,7 @@ export default class ControlCenterExtension extends Extension {
             1,
             () => {
                 attempts++;
-                const quickSettings = Main.panel.statusArea.quickSettings;
+                const quickSettings = getNativeQuickSettings();
                 const container = quickSettings?.container;
 
                 if (!container) {
@@ -781,7 +814,7 @@ export default class ControlCenterExtension extends Extension {
                 return;
             this._registrySource = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 2, () => {
                 this._registrySource = 0;
-                const grid = Main.panel.statusArea.quickSettings?.menu?._grid;
+                const grid = getNativeQuickSettingsGrid();
                 if (grid && !this._registrySignal) {
                     this._registryGrid = grid;
                     this._registrySignal = grid.connect('child-added', queue);
@@ -1003,40 +1036,40 @@ export default class ControlCenterExtension extends Extension {
 
     _openWifiMenu() {
         this._showMenuOverlay('Wi-Fi',
-            Main.panel.statusArea.quickSettings?._network?._wirelessToggle);
+            getNativeQuickSettingsToggle('wifi'));
     }
 
     _openBluetoothMenu() {
         this._showMenuOverlay('Bluetooth',
-            Main.panel.statusArea.quickSettings?._bluetooth?.quickSettingsItems?.[0]);
+            getNativeQuickSettingsToggle('bluetooth'));
     }
 
     _openSoundMenu() {
         this._showMenuOverlay('Sound Output',
-            Main.panel.statusArea.quickSettings?._volumeOutput?.quickSettingsItems?.[0]);
+            getNativeQuickSettingsToggle('sound'));
     }
 
     _openPowerModeMenu() {
         this._showMenuOverlay('Power Mode',
-            Main.panel.statusArea.quickSettings?._powerProfiles?.quickSettingsItems?.[0]);
+            getNativeQuickSettingsToggle('power'));
     }
 
     // Toggle Quick Settings yang belum punya tile khusus.
     _findExtraToggles() {
         const quickSettings = Main.panel.statusArea.quickSettings;
         const handled = new Set([
-            quickSettings?._network?._wirelessToggle,
-            quickSettings?._bluetooth?.quickSettingsItems?.[0],
-            quickSettings?._powerProfiles?.quickSettingsItems?.[0],
-            quickSettings?._doNotDisturb?.quickSettingsItems?.[0],
-            quickSettings?._rfkill?.quickSettingsItems?.[0],
-            quickSettings?._backgroundApps?.quickSettingsItems?.[0],
+            getNativeQuickSettingsToggle('wifi'),
+            getNativeQuickSettingsToggle('bluetooth'),
+            getNativeQuickSettingsToggle('power'),
+            getNativeQuickSettingsToggle('focus'),
+            getNativeQuickSettingsToggle('airplane'),
+            getNativeQuickSettingsToggle('background-apps'),
             Main.extensionManager.lookup(CAFFEINE_UUID)?.stateObj
                 ?._caffeineIndicator?.quickSettingsItems?.[0],
             Main.extensionManager.lookup(MIRROR_UUID)?.stateObj
                 ?._indicator?.quickSettingsItems?.[0],
         ]);
-        const items = quickSettings?.menu?._grid?.get_children() ?? [];
+        const items = getNativeQuickSettingsGrid()?.get_children() ?? [];
         return items.filter(item => item.visible && 'checked' in item &&
             item.title && !handled.has(item));
     }
@@ -1090,11 +1123,11 @@ export default class ControlCenterExtension extends Extension {
         const first = indicator => indicator?.quickSettingsItems?.[0];
         const extension = uuid => Main.extensionManager.lookup(uuid)?.stateObj;
         const entries = [
-            [this._wifiTile, quickSettings?._network?._wirelessToggle, true],
-            [this._bluetoothButton, first(quickSettings?._bluetooth), true],
-            [this._airplaneButton, first(quickSettings?._rfkill), false],
-            [this._focusTile, first(quickSettings?._doNotDisturb), false],
-            [this._powerModeButton, first(quickSettings?._powerProfiles), true],
+            [this._wifiTile, getNativeQuickSettingsToggle('wifi'), true],
+            [this._bluetoothButton, getNativeQuickSettingsToggle('bluetooth'), true],
+            [this._airplaneButton, getNativeQuickSettingsToggle('airplane'), false],
+            [this._focusTile, getNativeQuickSettingsToggle('focus'), false],
+            [this._powerModeButton, getNativeQuickSettingsToggle('power'), true],
             [this._mirrorButton, first(extension(MIRROR_UUID)?._indicator), true],
             [this._caffeineButton, first(extension(CAFFEINE_UUID)?._caffeineIndicator), true],
             ...(this._extraTiles ?? []).map(({actor, toggle}) => [actor, toggle, true]),
