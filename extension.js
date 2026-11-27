@@ -764,7 +764,7 @@ export default class ControlCenterExtension extends Extension {
             power: 'power-mode-tile-size',
         };
         this._tileSizeSignals = [];
-        for (const key of [...Object.values(this._tileSizeKeys), 'extra-tile-sizes']) {
+        for (const key of [...Object.values(this._tileSizeKeys), 'extra-tile-sizes', 'tile-order']) {
             const signal = this._settings.connect(`changed::${key}`, () => {
                 this._applyAllTileSizes();
             });
@@ -806,7 +806,7 @@ export default class ControlCenterExtension extends Extension {
         if (!this._grid || !this._settings)
             return;
 
-        // Urutan di sini menentukan posisi di grid.
+        // Urutan default; urutan pilihan pengguna diterapkan di bawah.
         const tiles = [
             ['wifi', this._wifiTile],
             ['media', this._mediaTile],
@@ -822,18 +822,26 @@ export default class ControlCenterExtension extends Extension {
                 styleMediaTile(actor, size);
             else
                 styleTile(actor, size);
-            return {actor, size};
+            return {id: name, actor, size};
         });
         const extraSizes = this._settings.get_value('extra-tile-sizes').deepUnpack();
-        const addTile = (actor, value) => {
+        const addTile = (id, actor, value) => {
             const size = SPANS[value] ? value : 'small';
             styleTile(actor, size);
-            tiles.push({actor, size});
+            tiles.push({id, actor, size});
         };
-        addTile(this._powerModeButton,
+        addTile('power', this._powerModeButton,
             this._settings.get_string(this._tileSizeKeys.power));
         for (const {actor, id} of this._extraTiles ?? [])
-            addTile(actor, extraSizes[id]);
+            addTile(`extra:${id}`, actor, extraSizes[id]);
+
+        // Tile yang belum ada di daftar urutan ditaruh di belakang.
+        const order = this._settings.get_strv('tile-order');
+        const rank = ({id}) => {
+            const index = order.indexOf(id);
+            return index < 0 ? order.length : index;
+        };
+        tiles.sort((a, b) => rank(a) - rank(b));
         placeTiles(this._grid, tiles);
         this._syncSubtitles();
     }
