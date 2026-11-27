@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
+import Pango from 'gi://Pango';
 import {SystemController} from './system.js';
 import {MediaController} from './media.js';
 
@@ -55,27 +56,74 @@ function placeTiles(grid, tiles) {
 // Tampilan isi tile sesuai ukurannya.
 function styleTile(actor, size) {
     const small = size === 'small';
-    const padding = small ? '0' : size === 'medium' ? '0 13px' : '12px';
+    const large = size === 'large';
+    const padding = small ? '0' : size === 'medium' ? '0 13px' : '14px';
     actor.set_style(`border-radius: 29px; padding: ${padding};`);
 
-    for (const text of [actor._ccCopy, actor._ccLabel]) {
-        if (text)
-            text.visible = !small;
+    // Medium: ikon di kiri, teks di kanan.
+    // Large: ikon di kiri atas, judul dan keterangan di kiri bawah.
+    const content = actor._ccContent ?? actor;
+    content.orientation = large
+        ? Clutter.Orientation.VERTICAL : Clutter.Orientation.HORIZONTAL;
+    if (actor._ccContent)
+        content.y_align = large ? Clutter.ActorAlign.FILL : Clutter.ActorAlign.CENTER;
+
+    const copy = actor._ccCopy;
+    if (copy) {
+        copy.visible = !small;
+        copy.x_expand = true;
+        copy.y_expand = false;
+        copy.y_align = large ? Clutter.ActorAlign.END : Clutter.ActorAlign.CENTER;
+        // Medium boleh dua baris; Large satu baris dengan elipsis.
+        setLabelWrap(copy, !large);
     }
+    // Tombol bulat hanya menampilkan keterangan di ukuran Large.
+    if (actor._ccContent && actor._ccSubRow)
+        actor._ccSubRow.visible = large;
+
     if (actor._ccSymbol) {
-        const symbolSize = small ? 46 : SYMBOL_SIZE;
+        const symbolSize = small ? 46 : large ? 40 : SYMBOL_SIZE;
         actor._ccSymbol.set_size(symbolSize, symbolSize);
-        actor._ccSymbol.set_style(`border-radius: 29px;`);
+        actor._ccSymbol.set_style('border-radius: 29px;');
         actor._ccSymbol.x_expand = small;
-        actor._ccSymbol.x_align = Clutter.ActorAlign.CENTER;
-        actor._ccSymbol.y_align = Clutter.ActorAlign.CENTER;
+        actor._ccSymbol.y_expand = large;
+        actor._ccSymbol.x_align = large ? Clutter.ActorAlign.START : Clutter.ActorAlign.CENTER;
+        actor._ccSymbol.y_align = large ? Clutter.ActorAlign.START : Clutter.ActorAlign.CENTER;
     }
     if (actor._ccIcon)
-        actor._ccIcon.set_icon_size(small ? 25 : SYMBOL_ICON_SIZE);
+        actor._ccIcon.set_icon_size(small ? 25 : large ? 22 : SYMBOL_ICON_SIZE);
 
     for (const option of Object.keys(SPANS))
         actor.remove_style_class_name(`cc-tile-size-${option}`);
     actor.add_style_class_name(`cc-tile-size-${size}`);
+}
+
+function setLabelWrap(actor, wrap) {
+    if (actor instanceof St.Label) {
+        actor.clutter_text.line_wrap = wrap;
+        actor.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        return;
+    }
+    for (const child of actor.get_children())
+        setLabelWrap(child, wrap);
+}
+
+// Baris keterangan dengan penanda menu (panah atas-bawah).
+function makeSubRow(tile, status) {
+    const row = new St.BoxLayout({style_class: 'cc-subrow'});
+    status.x_expand = false;
+    const chevron = new St.Icon({
+        gicon: mediaGicon('updown'),
+        icon_size: 9,
+        y_align: Clutter.ActorAlign.CENTER,
+        visible: false,
+    });
+    row.add_child(status);
+    row.add_child(chevron);
+    tile._ccStatusLabel = status;
+    tile._ccChevron = chevron;
+    tile._ccSubRow = row;
+    return row;
 }
 
 // Ratakan isi menu GNOME (termasuk section dan submenu) menjadi daftar biasa.
@@ -113,6 +161,7 @@ const MEDIA_SHAPES = {
     play: 'M6 3.5v17L20.5 12z',
     pause: 'M5.5 4h4.5v16H5.5zM14 4h4.5v16H14z',
     next: 'M2 5l9.5 7L2 19zM12.5 5L22 12l-9.5 7z',
+    updown: 'M12 4l5 5H7zM12 20l-5-5h10z',
 };
 
 function mediaGicon(shape) {
@@ -181,7 +230,7 @@ function makeWifiTile(onClick = null, onMenuClick = null) {
     });
     const status = label('Connected', 'cc-subtitle');
     text.add_child(label('Wi-Fi', 'cc-title'));
-    text.add_child(status);
+    text.add_child(makeSubRow(tile, status));
     const copy = new St.Button({
         reactive: true,
         can_focus: true,
@@ -229,10 +278,18 @@ function makeCircle(name, accessibleName, onClick = null, onMenu = null) {
     button._ccIcon.set_y_align(Clutter.ActorAlign.CENTER);
     symbol.add_child(button._ccIcon);
     button._ccLabel = label(accessibleName, 'cc-control-label');
+    const info = new St.BoxLayout({
+        orientation: Clutter.Orientation.VERTICAL,
+        style_class: 'cc-copy',
+    });
+    info.add_child(button._ccLabel);
+    info.add_child(makeSubRow(button, label('Off', 'cc-subtitle')));
+    button._ccCopy = info;
     content.add_child(symbol);
-    content.add_child(button._ccLabel);
+    content.add_child(info);
     button.set_child(content);
     button._ccSymbol = symbol;
+    button._ccContent = content;
     if (onClick) {
         button.connect('clicked', (_button, mouseButton) => {
             if (mouseButton !== 3)
@@ -276,7 +333,7 @@ function makeFocusTile(onClick = null) {
     });
     copy.add_child(label('Focus', 'cc-title'));
     const status = label('Do Not Disturb', 'cc-subtitle');
-    copy.add_child(status);
+    copy.add_child(makeSubRow(tile, status));
     tile._ccIcon = symbolIcon;
     tile._ccStatusLabel = status;
     tile._ccSymbol = symbol;
@@ -679,9 +736,10 @@ export default class ControlCenterExtension extends Extension {
             media: 'media-tile-size',
             mirror: 'mirror-tile-size',
             caffeine: 'caffeine-tile-size',
+            power: 'power-mode-tile-size',
         };
         this._tileSizeSignals = [];
-        for (const key of Object.values(this._tileSizeKeys)) {
+        for (const key of [...Object.values(this._tileSizeKeys), 'extra-tile-sizes']) {
             const signal = this._settings.connect(`changed::${key}`, () => {
                 this._applyAllTileSizes();
             });
@@ -714,12 +772,18 @@ export default class ControlCenterExtension extends Extension {
             }
             return {actor, size};
         });
-        const power = {actor: this._powerModeButton};
-        for (const {actor} of [power, ...(this._extraTiles ?? [])]) {
-            styleTile(actor, 'small');
-            tiles.push({actor, size: 'small'});
-        }
+        const extraSizes = this._settings.get_value('extra-tile-sizes').deepUnpack();
+        const addTile = (actor, value) => {
+            const size = SPANS[value] ? value : 'small';
+            styleTile(actor, size);
+            tiles.push({actor, size});
+        };
+        addTile(this._powerModeButton,
+            this._settings.get_string(this._tileSizeKeys.power));
+        for (const {actor, id} of this._extraTiles ?? [])
+            addTile(actor, extraSizes[id]);
         placeTiles(this._grid, tiles);
+        this._syncSubtitles();
     }
 
     _syncNativeQuickSettingsVisibility() {
@@ -928,7 +992,12 @@ export default class ControlCenterExtension extends Extension {
         if (changed) {
             for (const {actor} of current)
                 actor.destroy();
+            const seen = {};
             this._extraTiles = toggles.map(toggle => {
+                // ID stabil untuk menyimpan ukuran; judul bisa berubah.
+                const base = toggle.constructor.name || toggle.title;
+                seen[base] = (seen[base] ?? 0) + 1;
+                const id = seen[base] > 1 ? `${base}#${seen[base]}` : base;
                 const actor = makeCircle('application-x-addon-symbolic', toggle.title,
                     () => this._activateToggle(toggle),
                     () => {
@@ -936,7 +1005,7 @@ export default class ControlCenterExtension extends Extension {
                             this._showMenuOverlay(toggle.title, toggle);
                     });
                 this._grid.add_child(actor);
-                return {actor, toggle};
+                return {actor, toggle, id};
             });
             this._applyAllTileSizes();
         }
@@ -947,8 +1016,54 @@ export default class ControlCenterExtension extends Extension {
             else if (toggle.icon_name)
                 actor._ccIcon.icon_name = toggle.icon_name;
             actor.accessible_name = toggle.title;
+            actor._ccLabel.text = toggle.title;
             setControlActive(actor, toggle.checked);
         }
+        this._rememberToggles();
+        this._syncSubtitles();
+    }
+
+    // Keterangan diambil dari toggle asli, misalnya nama Wi-Fi atau profil daya.
+    _syncSubtitles() {
+        const quickSettings = Main.panel.statusArea.quickSettings;
+        const first = indicator => indicator?.quickSettingsItems?.[0];
+        const extension = uuid => Main.extensionManager.lookup(uuid)?.stateObj;
+        const entries = [
+            [this._wifiTile, quickSettings?._network?._wirelessToggle, true],
+            [this._bluetoothButton, first(quickSettings?._bluetooth), true],
+            [this._airplaneButton, first(quickSettings?._rfkill), false],
+            [this._focusTile, first(quickSettings?._doNotDisturb), false],
+            [this._powerModeButton, first(quickSettings?._powerProfiles), true],
+            [this._mirrorButton, first(extension(MIRROR_UUID)?._indicator), true],
+            [this._caffeineButton, first(extension(CAFFEINE_UUID)?._caffeineIndicator), true],
+            ...(this._extraTiles ?? []).map(({actor, toggle}) => [actor, toggle, true]),
+        ];
+        for (const [tile, toggle, canOpenMenu] of entries) {
+            if (!tile?._ccStatusLabel)
+                continue;
+            if (toggle?.subtitle)
+                tile._ccStatusLabel.text = toggle.subtitle;
+            else if (toggle && tile._ccContent) // tombol bulat
+                tile._ccStatusLabel.text = toggle.checked ? 'On' : 'Off';
+            tile._ccChevron.visible = tile.has_style_class_name('cc-tile-size-large') &&
+                Boolean(canOpenMenu && toggle?.menu && toggle.menuEnabled !== false);
+        }
+    }
+
+    // Dicatat agar Preferences bisa menampilkan pilihan ukurannya.
+    _rememberToggles() {
+        if (!this._settings)
+            return;
+        const known = this._settings.get_value('known-toggles').deepUnpack();
+        let changed = false;
+        for (const {id, toggle} of this._extraTiles ?? []) {
+            if (known[id] !== toggle.title) {
+                known[id] = toggle.title;
+                changed = true;
+            }
+        }
+        if (changed)
+            this._settings.set_value('known-toggles', new GLib.Variant('a{ss}', known));
     }
 
     _activateToggle(toggle) {
