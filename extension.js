@@ -954,8 +954,9 @@ export default class ControlCenterExtension extends Extension {
             this._quickSettingsSource = 0;
         }
 
-        if (this._nativeQuickSettings)
-            this._setQuickSettingsLocked(this._nativeQuickSettings, false);
+        const lockedQuickSettings = this._lockedQuickSettingsState?.quickSettings;
+        if (lockedQuickSettings)
+            this._setQuickSettingsLocked(lockedQuickSettings, false);
         this._nativeQuickSettings = null;
     }
 
