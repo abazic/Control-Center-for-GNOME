@@ -1,4 +1,5 @@
 import Adw from 'gi://Adw';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -29,6 +30,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             ['media-tile-size', 'Media Player'],
             ['mirror-tile-size', 'Mirror'],
             ['caffeine-tile-size', 'Caffeine'],
+            ['power-mode-tile-size', 'Power Mode'],
         ]) {
             const row = new Adw.ComboRow({title, model: sizeModel});
             const current = settings.get_string(key);
@@ -36,9 +38,36 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             row.connect('notify::selected', () => {
                 settings.set_string(key, sizeValues[row.selected] ?? 'small');
             });
+            if (key === 'media-tile-size') {
+                row.selected = 2;
+                row.sensitive = false;
+                row.subtitle = 'Hanya tersedia dalam ukuran Large';
+            }
             appearanceGroup.add(row);
         }
         page.add(appearanceGroup);
+
+        const extraGroup = new Adw.PreferencesGroup({
+            title: 'Toggle lainnya',
+            description: 'Toggle dari Quick Settings. Buka Control Center sekali, lalu buka ulang jendela ini bila daftarnya belum lengkap.',
+        });
+        const known = settings.get_value('known-toggles').deepUnpack();
+        for (const [id, title] of Object.entries(known)) {
+            const row = new Adw.ComboRow({
+                title,
+                use_markup: false,
+                model: Gtk.StringList.new(['Small', 'Medium', 'Large']),
+            });
+            const sizes = settings.get_value('extra-tile-sizes').deepUnpack();
+            row.selected = Math.max(0, sizeValues.indexOf(sizes[id]));
+            row.connect('notify::selected', () => {
+                const next = settings.get_value('extra-tile-sizes').deepUnpack();
+                next[id] = sizeValues[row.selected] ?? 'small';
+                settings.set_value('extra-tile-sizes', new GLib.Variant('a{ss}', next));
+            });
+            extraGroup.add(row);
+        }
+        page.add(extraGroup);
 
         const integrationGroup = new Adw.PreferencesGroup({
             title: 'System integration',
