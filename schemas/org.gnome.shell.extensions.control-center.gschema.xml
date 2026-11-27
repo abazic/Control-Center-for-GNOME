@@ -7,7 +7,7 @@
       <description>Size used for Control Center tiles.</description>
     </key>
     <key name="wifi-tile-size" type="s">
-      <default>'small'</default>
+      <default>'medium'</default>
       <summary>Wi-Fi tile size</summary>
       <description>Display size for the Wi-Fi tile.</description>
     </key>
@@ -22,7 +22,7 @@
       <description>Display size for the Airplane Mode tile.</description>
     </key>
     <key name="focus-tile-size" type="s">
-      <default>'small'</default>
+      <default>'medium'</default>
       <summary>Focus / Do Not Disturb tile size</summary>
       <description>Display size for the Focus / Do Not Disturb tile.</description>
     </key>
@@ -45,6 +45,18 @@
       <default>true</default>
       <summary>Hide native GNOME Quick Settings</summary>
       <description>Hide the native Quick Settings panel indicator while Control Center is enabled.</description>
+    </key>
+    <key name="power-mode-tile-size" type="s">
+      <default>'small'</default>
+      <summary>Power Mode tile size</summary>
+    </key>
+    <key name="extra-tile-sizes" type="a{ss}">
+      <default>{}</default>
+      <summary>Sizes of other Quick Settings toggles</summary>
+    </key>
+    <key name="known-toggles" type="a{ss}">
+      <default>{}</default>
+      <summary>Discovered Quick Settings toggles</summary>
     </key>
   </schema>
 </schemalist>
