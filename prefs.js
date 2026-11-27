@@ -16,68 +16,127 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
 
         const settings = this.getSettings();
         const sizeValues = ['small', 'medium', 'large'];
-        const sizeModel = Gtk.StringList.new(['Small', 'Medium', 'Large']);
-        const appearanceGroup = new Adw.PreferencesGroup({
-            title: 'Tile sizes',
-            description: 'Set the size of each Control Center tile independently. Small: 60 × 60 px; Medium: 130 × 60 px; Large: 130 × 130 px.',
+        const tilesGroup = new Adw.PreferencesGroup({
+            title: 'Tiles',
+            description: 'Atur ukuran dan urutan tile dengan tombol panah. Small: 60 × 60 px; Medium: 130 × 60 px; Large: 130 × 130 px.',
         });
 
-        for (const [key, title] of [
-            ['wifi-tile-size', 'Wi-Fi'],
-            ['bluetooth-tile-size', 'Bluetooth'],
-            ['airplane-tile-size', 'Airplane Mode'],
-            ['focus-tile-size', 'Focus / Do Not Disturb'],
-            ['media-tile-size', 'Media Player'],
-            ['mirror-tile-size', 'Mirror'],
-            ['caffeine-tile-size', 'Caffeine'],
-            ['power-mode-tile-size', 'Power Mode'],
-        ]) {
-            const row = new Adw.ComboRow({title, model: sizeModel});
-            const current = settings.get_string(key);
-            row.selected = Math.max(0, sizeValues.indexOf(current));
-            row.connect('notify::selected', () => {
-                settings.set_string(key, sizeValues[row.selected] ?? 'small');
-            });
-            appearanceGroup.add(row);
-        }
-        page.add(appearanceGroup);
+        // Urutan di sini adalah urutan default.
+        const fixedTiles = [
+            ['wifi', 'Wi-Fi'],
+            ['media', 'Media Player'],
+            ['bluetooth', 'Bluetooth'],
+            ['airplane', 'Airplane Mode'],
+            ['focus', 'Focus / Do Not Disturb'],
+            ['mirror', 'Mirror'],
+            ['caffeine', 'Caffeine'],
+            ['power', 'Power Mode'],
+        ];
+        const sizeKey = id => id === 'power' ? 'power-mode-tile-size' : `${id}-tile-size`;
 
-        const extraGroup = new Adw.PreferencesGroup({
-            title: 'Toggle lainnya',
-            description: 'Toggle dari Quick Settings. Daftar ini terisi otomatis saat toggle baru terdeteksi.',
-        });
-        const rows = new Map();
-        const addRows = () => {
+        const listTiles = () => {
             const known = settings.get_value('known-toggles').deepUnpack();
-            for (const [id, title] of Object.entries(known)) {
-                if (rows.has(id)) {
-                    rows.get(id).title = title;
-                    continue;
-                }
+            const tiles = [
+                ...fixedTiles.map(([id, title]) => ({id, title})),
+                ...Object.entries(known).map(([extra, title]) =>
+                    ({id: `extra:${extra}`, extra, title})),
+            ];
+            const order = settings.get_strv('tile-order');
+            const rank = ({id}) => {
+                const index = order.indexOf(id);
+                return index < 0 ? order.length : index;
+            };
+            return tiles.sort((x, y) => rank(x) - rank(y));
+        };
+
+        const getSize = tile => tile.extra
+            ? settings.get_value('extra-tile-sizes').deepUnpack()[tile.extra]
+            : settings.get_string(sizeKey(tile.id));
+
+        const setSize = (tile, size) => {
+            if (!tile.extra) {
+                settings.set_string(sizeKey(tile.id), size);
+                return;
+            }
+            const sizes = settings.get_value('extra-tile-sizes').deepUnpack();
+            sizes[tile.extra] = size;
+            settings.set_value('extra-tile-sizes', new GLib.Variant('a{ss}', sizes));
+        };
+
+        const move = (id, step) => {
+            const ids = listTiles().map(tile => tile.id);
+            const from = ids.indexOf(id);
+            const to = from + step;
+            if (from < 0 || to < 0 || to >= ids.length)
+                return;
+            [ids[from], ids[to]] = [ids[to], ids[from]];
+            settings.set_strv('tile-order', ids);
+        };
+
+        let rows = [];
+        const rebuild = () => {
+            for (const row of rows)
+                tilesGroup.remove(row);
+            const tiles = listTiles();
+            rows = tiles.map((tile, index) => {
                 const row = new Adw.ComboRow({
-                    title,
+                    title: tile.title,
                     use_markup: false,
                     model: Gtk.StringList.new(['Small', 'Medium', 'Large']),
                 });
-                const sizes = settings.get_value('extra-tile-sizes').deepUnpack();
-                row.selected = Math.max(0, sizeValues.indexOf(sizes[id]));
-                row.connect('notify::selected', () => {
-                    const next = settings.get_value('extra-tile-sizes').deepUnpack();
-                    next[id] = sizeValues[row.selected] ?? 'small';
-                    settings.set_value('extra-tile-sizes', new GLib.Variant('a{ss}', next));
-                });
-                extraGroup.add(row);
-                rows.set(id, row);
-            }
+                row.selected = Math.max(0, sizeValues.indexOf(getSize(tile)));
+                row.connect('notify::selected', () =>
+                    setSize(tile, sizeValues[row.selected] ?? 'small'));
+
+                const arrows = new Gtk.Box({valign: Gtk.Align.CENTER});
+                for (const [icon, tooltip, step, enabled] of [
+                    ['go-up-symbolic', 'Naikkan', -1, index > 0],
+                    ['go-down-symbolic', 'Turunkan', 1, index < tiles.length - 1],
+                ]) {
+                    const button = new Gtk.Button({
+                        icon_name: icon,
+                        tooltip_text: tooltip,
+                        sensitive: enabled,
+                        css_classes: ['flat'],
+                    });
+                    button.connect('clicked', () => move(tile.id, step));
+                    arrows.append(button);
+                }
+                row.add_prefix(arrows);
+                tilesGroup.add(row);
+                return row;
+            });
         };
-        addRows();
-        // Toggle baru langsung muncul selagi jendela ini terbuka.
-        const knownSignal = settings.connect('changed::known-toggles', addRows);
+        rebuild();
+
+        // Disusun ulang setelah klik selesai diproses.
+        let pending = 0;
+        const queueRebuild = () => {
+            pending ||= GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                pending = 0;
+                rebuild();
+                return GLib.SOURCE_REMOVE;
+            });
+        };
+        const signals = ['tile-order', 'known-toggles'].map(key =>
+            settings.connect(`changed::${key}`, queueRebuild));
         window.connect('close-request', () => {
-            settings.disconnect(knownSignal);
+            for (const signal of signals)
+                settings.disconnect(signal);
+            if (pending)
+                GLib.Source.remove(pending);
+            pending = 0;
             return false;
         });
-        page.add(extraGroup);
+
+        const resetButton = new Gtk.Button({
+            label: 'Reset urutan',
+            valign: Gtk.Align.CENTER,
+            css_classes: ['flat'],
+        });
+        resetButton.connect('clicked', () => settings.reset('tile-order'));
+        tilesGroup.set_header_suffix(resetButton);
+        page.add(tilesGroup);
 
         const integrationGroup = new Adw.PreferencesGroup({
             title: 'System integration',
