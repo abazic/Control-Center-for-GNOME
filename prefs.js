@@ -1,4 +1,6 @@
 import Adw from 'gi://Adw';
+import Gdk from 'gi://Gdk';
+import GObject from 'gi://GObject';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
@@ -18,7 +20,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
         const sizeValues = ['small', 'medium', 'large'];
         const tilesGroup = new Adw.PreferencesGroup({
             title: 'Tiles',
-            description: 'Atur ukuran dan urutan tile dengan tombol panah. Small: 60 × 60 px; Medium: 130 × 60 px; Large: 130 × 130 px.',
+            description: 'Seret pegangan di kiri untuk mengubah urutan. Small: 60 × 60 px; Medium: 130 × 60 px; Large: 130 × 130 px.',
         });
 
         // Urutan di sini adalah urutan default.
@@ -63,14 +65,42 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             settings.set_value('extra-tile-sizes', new GLib.Variant('a{ss}', sizes));
         };
 
-        const move = (id, step) => {
+        // Pindahkan tile yang diseret ke posisi tile tujuan.
+        const moveTo = (id, targetId) => {
             const ids = listTiles().map(tile => tile.id);
             const from = ids.indexOf(id);
-            const to = from + step;
-            if (from < 0 || to < 0 || to >= ids.length)
-                return;
-            [ids[from], ids[to]] = [ids[to], ids[from]];
+            const to = ids.indexOf(targetId);
+            if (from < 0 || to < 0 || from === to)
+                return false;
+            ids.splice(from, 1);
+            ids.splice(to, 0, id);
             settings.set_strv('tile-order', ids);
+            return true;
+        };
+
+        const makeDragHandle = (row, id) => {
+            const handle = new Gtk.Image({
+                icon_name: 'list-drag-handle-symbolic',
+                tooltip_text: 'Seret untuk mengubah urutan',
+            });
+            handle.set_cursor_from_name('grab');
+
+            const source = new Gtk.DragSource({actions: Gdk.DragAction.MOVE});
+            source.connect('prepare', () => {
+                const value = new GObject.Value();
+                value.init(GObject.TYPE_STRING);
+                value.set_string(id);
+                return Gdk.ContentProvider.new_for_value(value);
+            });
+            // Bayangan baris mengikuti kursor selama diseret.
+            source.connect('drag-begin', () =>
+                source.set_icon(new Gtk.WidgetPaintable({widget: row}), 20, 20));
+            handle.add_controller(source);
+
+            const target = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.MOVE);
+            target.connect('drop', (_target, draggedId) => moveTo(draggedId, id));
+            row.add_controller(target);
+            return handle;
         };
 
         let rows = [];
@@ -78,7 +108,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
             for (const row of rows)
                 tilesGroup.remove(row);
             const tiles = listTiles();
-            rows = tiles.map((tile, index) => {
+            rows = tiles.map(tile => {
                 const row = new Adw.ComboRow({
                     title: tile.title,
                     use_markup: false,
@@ -88,21 +118,7 @@ export default class ControlCenterPreferences extends ExtensionPreferences {
                 row.connect('notify::selected', () =>
                     setSize(tile, sizeValues[row.selected] ?? 'small'));
 
-                const arrows = new Gtk.Box({valign: Gtk.Align.CENTER});
-                for (const [icon, tooltip, step, enabled] of [
-                    ['go-up-symbolic', 'Naikkan', -1, index > 0],
-                    ['go-down-symbolic', 'Turunkan', 1, index < tiles.length - 1],
-                ]) {
-                    const button = new Gtk.Button({
-                        icon_name: icon,
-                        tooltip_text: tooltip,
-                        sensitive: enabled,
-                        css_classes: ['flat'],
-                    });
-                    button.connect('clicked', () => move(tile.id, step));
-                    arrows.append(button);
-                }
-                row.add_prefix(arrows);
+                row.add_prefix(makeDragHandle(row, tile.id));
                 tilesGroup.add(row);
                 return row;
             });
